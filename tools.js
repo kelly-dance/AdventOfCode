@@ -2,16 +2,24 @@ export const Digits = [0,1,2,3,4,5,6,7,8,9];
 
 /**
  * [start, end)
+ * if only 1 param is passed start is 0 and param is end
+ * increment defaults to 1
  * @param {number} start 
- * @param {number} end
+ * @param {number=} end
+ * @param {number=} inc
  * @returns {number[]} 
  */
-export const range = (start, end) => {
+export const range = (start, end, inc = 1) => {
   if(!end){
     end = start;
     start = 0;
   }
-  return Array.from({length: end-start}, (_,i)=>i+start);
+  return Array.from(
+    {
+      length: Math.ceil((end - start) / inc)
+    },
+    (_, i) => i * inc + start
+  );
 }
 
 export const newSieve = max => 
@@ -571,3 +579,10 @@ export const inRange = (n, lower, upper, inclusive) => {
   if(inclusive) return lower <= n && n <= upper;
   return lower < n && n < upper;
 }
+
+/**
+ * @template T
+ * @param {T[]} arr 
+ * @param {(arg: T) => boolean} pred 
+ */
+export const countMatches = (arr, pred) => arr.reduce((acc, current) => pred(current) ? acc + 1 : acc, 0);
