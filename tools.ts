@@ -386,9 +386,10 @@ export const inRange = (n: number, lower: number, upper: number, inclusive: bool
   return lower < n && n < upper;
 }
 
-/**
- * @template T
- * @param {T[]} arr 
- * @param {(arg: T) => boolean} pred 
- */
 export const countMatches = <T>(arr: T[], pred: ((arg: T) => boolean)) => arr.reduce((acc, current) => pred(current) ? acc + 1 : acc, 0);
+
+export const union = <T>(...sets: Set<T>[]): Set<T> => new Set(sets.map(s => [...s]).flat(1));
+
+export const intersection = <T>(a: Set<T>, ...rest: Set<T>[]) => new Set<T>(takeAll(a.values()).filter(v => rest.every(set => set.has(v))));
+
+export const pickIntsFromString = (str: string) => str.match(/\d+/g)?.map(s => parseInt(s)) || [];
