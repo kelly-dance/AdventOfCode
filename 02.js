@@ -1,4 +1,4 @@
-import { inRange, readFile } from './tools.js';
+import { inRange, readFile } from './tools.ts';
 
 const input = readFile('./inputs/02.txt').split('\n').map(l => {
   const matches = l.match(/(\d+)-(\d+) ([a-z]): ([a-z]+)/).slice(1);

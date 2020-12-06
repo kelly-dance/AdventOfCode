@@ -1,4 +1,4 @@
-import { combos, filterGenerator, product, readFile, sum } from './tools.js';
+import { combos, filterGenerator, product, readFile, sum } from './tools.ts';
 
 const nums = readFile('./inputs/01.txt').split('\n').map(Number);
 

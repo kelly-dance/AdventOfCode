@@ -1,4 +1,4 @@
-import { countMatches, inRange, readFile } from './tools.js';
+import { countMatches, inRange, readFile } from './tools.ts';
 
 const types = {
   byr: s => /^\d{4}$/.test(s) && inRange(Number(s), 1920, 2002, true),
