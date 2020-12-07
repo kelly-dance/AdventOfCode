@@ -12,11 +12,9 @@ const input = Object.fromEntries(readFile('inputs/07.txt').split('\r\n').map(lin
   return [bagType, bags]
 }));
 
-const exploreUp = (bag, cache = new Set()) => cache.has(bag)
-  ? cache
-  : Object.entries(input)
-      .filter(([_, val]) => val.some(b => b.name == bag))
-      .forEach(([key, _]) => exploreUp(key, cache)) || cache.add(bag);
+const exploreUp = (bag, cache = new Set()) => Object.entries(input)
+  .filter(([_, val]) => val.some(b => b.name == bag))
+  .forEach(([key, _]) => exploreUp(key, cache)) || cache.add(bag);
 
 console.log(exploreUp('shiny gold').size - 1);
 
