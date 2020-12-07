@@ -9,30 +9,17 @@ const input = Object.fromEntries(readFile('inputs/07.txt').split('\r\n').map(lin
       name: things[1] + ' ' + things[2],
     }
   }) || [];
-  return [bagType,bags]
+  return [bagType, bags]
 }));
 
-const seen = new Set();
+const exploreUp = (bag, cache = new Set()) => cache.has(bag)
+  ? cache
+  : Object.entries(input)
+      .filter(([_, val]) => val.some(b => b.name == bag))
+      .forEach(([key, _]) => exploreUp(key, cache)) || cache.add(bag);
 
-const exploreUp = bag => {
-  if(seen.has(bag)) return;
-  seen.add(bag)
-  Object.entries(input).forEach(([key, val]) => {
-    if(val.some(b => b.name == bag)) exploreUp(key);
-  })
-}
-exploreUp('shiny gold');
+console.log(exploreUp('shiny gold').size - 1);
 
-console.log(seen.size - 1);
+const exploreDown = bag => (input[bag].length === 0) ? 0 : sum(input[bag].map(b => b.amount + b.amount * exploreDown(b.name)));
 
-const exploreDown = (bag, multi = 1, cache = {}) => {
-  if(input[bag].length === 0) return;
-  input[bag].forEach(b => {
-    if(!cache[b.name])  cache[b.name] = 0;
-    cache[b.name] += multi * b.amount;
-    exploreDown(b.name, multi * b.amount, cache);
-  })
-  return cache;
-}
-console.log(sum(Object.values(exploreDown('shiny gold'))))
-
+console.log(exploreDown('shiny gold'))
