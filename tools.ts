@@ -13,9 +13,7 @@ export function range(start: number, end?: number, inc: number = 1): number[] {
     start = 0;
   }
   return Array.from(
-    {
-      length: Math.ceil((end - start) / inc)
-    },
+    { length: Math.ceil((end - start) / inc) },
     (_, i) => i * inc + start
   );
 }
@@ -88,9 +86,6 @@ export const productBigInt = (nums: bigint[]) => nums.reduce((a, n) => a * n, 1n
 
 /**
  * PLEASE PASS PRIMES TO THIS OR MEGA SLOW
- * @param {number} n 
- * @param {number[]} primes 
- * @returns {number[]}
  */
 export const primeFactors = (n: number, given: number[] | null = null) => {
   const primes = given || sieve(n);
@@ -182,12 +177,9 @@ export const combosWithLowerTimes = function*<T>(arr: T[], times: number): Gener
 }
 
 export const memoize = <P, R>(fn: ((arg0: P) => R), defaults?: Map<P, R>): ((arg0: P) => R) => {
-  /**
-   * @type {Map<P,R>}
-   */
-  const cache = defaults || new Map();
+  const cache = defaults || new Map<P,R>();
   return arg => {
-    if(cache.has(arg)) return cache.get(arg);
+    if(cache.has(arg)) return cache.get(arg) as R;
     const result = fn(arg);
     cache.set(arg, result);
     return result;
@@ -234,14 +226,34 @@ export const newTotient = (n: number, given?: number[]) => {
   return Math.round(t);
 }
 
+/**
+ * totientsUpTo(n)[i <= n] = phi(i)
+ */
 export const totientsUpTo = (target: number) => {
   const phi = range(0,target+1);
   for(let n = 2; n <= target; n++){
       if(phi[n] == n){ // this number is prime
         phi[n]--; // phi(prime) = prime - 1
-        for(let i = n*2; i <= target; i += n) // loop through multiples of this number
+        for(let i = n * 2; i <= target; i += n) // loop through multiples of this number
           phi[i] *= 1 - (1 / n); //removes the stuff
       }
+  }
+  return phi;
+}
+
+/**
+ * outputs totients starting from phi(i), phi(2) ... phi(target)
+ */
+export const totientsUpToGenerator = function*(target: number){
+  const phi = range(0,target+1);
+  yield 1;
+  for(let n = 2; n <= target; n++){
+      if(phi[n] == n){ // this number is prime
+        phi[n]--; // phi(prime) = prime - 1
+        for(let i = n * 2; i <= target; i += n) // loop through multiples of this number
+          phi[i] *= 1 - (1 / n); //removes the stuff
+      }
+      yield phi[n];
   }
   return phi;
 }
@@ -393,3 +405,126 @@ export const union = <T>(...sets: Set<T>[]): Set<T> => new Set(sets.map(s => [..
 export const intersection = <T>(a: Set<T>, ...rest: Set<T>[]) => new Set<T>(takeAll(a.values()).filter(v => rest.every(set => set.has(v))));
 
 export const pickIntsFromString = (str: string) => str.match(/\d+/g)?.map(s => parseInt(s)) || [];
+
+export class MultiMap<Ks extends any[], T>{
+  numKeys: number;
+  root: Map<any, any>;
+  size: number;
+
+  constructor(numKeys: number){
+    this.numKeys = numKeys;
+    this.root = new Map();
+    this.size = 0;
+  }
+
+  get(keys: Ks): T | undefined {
+    if(keys.length !== this.numKeys) return;
+    let current = this.root;
+    for(let layer = 0; layer < this.numKeys; layer++){
+      if(!current.has(keys[layer])) return undefined;
+      current = current.get(keys[layer]);
+    }
+    return current as any as T;
+  }
+
+  set(keys: Ks, value: T) {
+    if(keys.length !== this.numKeys) return;
+    let current = this.root;
+    for(let layer = 0; layer < this.numKeys - 1; layer++){
+      if(!current.has(keys[layer])) current.set(keys[layer], new Map())
+      current = current.get(keys[layer]);
+    }
+    if(!current.has(keys[this.numKeys - 1])) this.size++;
+    current.set(keys[this.numKeys - 1], value);
+  }
+
+  has(keys: Ks){
+    if(keys.length !== this.numKeys) return false;
+    let current = this.root;
+    for(let layer = 0; layer < this.numKeys; layer++){
+      if(!current.has(keys[layer])) return false;
+      current = current.get(keys[layer]);
+    }
+    return true;
+  }
+
+  *entries(): Generator<[Ks, T]> {
+    const self = this;
+    function* yieldFrom(prepend: any, map: Map<any, any>, layer: number): Generator<[any, T]> {
+      if(layer === self.numKeys) {
+        for(const [key, entry] of map.entries()){
+          yield [[...prepend, key], entry]
+        }
+      } else {
+        for(const [key, entry] of map.entries()){
+          yield* yieldFrom([...prepend, key], entry, layer + 1);
+        }
+      }
+    }
+    yield* yieldFrom([], this.root, 1);
+  }
+
+  *keys(): Generator<Ks> {
+    for(const [keys, _] of this.entries()) yield keys;
+  }
+
+  *values(): Generator<T> {
+    for(const [_, value] of this.entries()) yield value;
+  }
+
+  clear(){
+    this.root = new Map();
+    this.size = 0;
+  }
+
+  /**
+   * @TODO
+   * this can possibily leave empty maps that store no data
+   */
+  delete(keys: Ks) {
+    if(keys.length !== this.numKeys) return false;
+    let current = this.root;
+    for(let layer = 0; layer < this.numKeys - 1; layer++){
+      if(!current.has(keys[layer])) return false;
+      current = current.get(keys[layer]);
+    }
+    const didDelete = current.delete(keys[this.numKeys - 1]);
+    if(didDelete) this.size--;
+    return didDelete;
+  }
+
+  forEach(cb: (value: T, keys: Ks, map: this) => void) {
+    for(const [keys, value] of this.entries()){
+      cb(value, keys, this);
+    }
+  }
+}
+
+export const memoizeMulti = <Ks extends any[], R>(fn: (...args: Ks) => R, defaults?: MultiMap<Ks, R>): ((...args: Ks) => R) => {
+  const cache = defaults || new MultiMap<Ks, R>(fn.length);
+  return (...args: Ks) => {
+    if(cache.has(args)) return cache.get(args) as R;
+    const result = fn(...args);
+    cache.set(args, result);
+    return result;
+  }
+}
+
+export const enumerate = <T>(arr: T[]): [T, number][] => arr.map((v, i) => [v, i]);
+
+export class DefaultMap<K, V> extends Map<K, V>{
+  derive: (key: K) => V;
+
+  constructor(deriveDefault: (key: K) => V){
+    super();
+    this.derive = deriveDefault;
+  }
+
+  get(key: K): V {
+    return this.get(key) || this.derive(key);
+  }
+
+  has(key: K){
+    return true;
+  }
+}
