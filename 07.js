@@ -18,6 +18,6 @@ const exploreUp = (bag, cache = new Set()) => Object.entries(input)
 
 console.log(exploreUp('shiny gold').size - 1);
 
-const exploreDown = bag => (input[bag].length === 0) ? 0 : sum(input[bag].map(b => b.amount + b.amount * exploreDown(b.name)));
+const exploreDown = bag => sum(input[bag].map(b => b.amount + b.amount * exploreDown(b.name)));
 
 console.log(exploreDown('shiny gold'))
