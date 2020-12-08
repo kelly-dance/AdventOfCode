@@ -8,7 +8,10 @@ const input = readFile('inputs/08.txt').split('\r\n').map(line => {
   return [stuff[0], parseInt(stuff[1])];
 });
 
-/** @param {Instruction[]} instructions */
+/**
+ * @param {Instruction[]} instructions
+ * @returns {[boolean, number]}
+ */
 const executor = (instructions) => {
   let position = 0;
   let acc = 0;

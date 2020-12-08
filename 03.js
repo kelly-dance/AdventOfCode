@@ -1,6 +1,6 @@
 import { product, range, readFile } from './tools.ts';
 
-const input = readFile('./inputs/03b.txt').split('\r\n').map(l => l.split('').map(c => c === '#'));
+const input = readFile('./inputs/03.txt').split('\r\n').map(l => l.split('').map(c => c === '#'));
 
 const solveSlope = ([xS, yS]) => 
   range(yS, input.length, yS)
