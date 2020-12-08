@@ -13,7 +13,5 @@ readInts = map read
 
 combinations :: Int -> [Int] -> [[Int]]
 combinations 1 ns = map (:[]) ns
-combinations k ns = concat (zipWith
-       (\t i -> map (t:) (combinations (k - 1) (drop i ns)))
-    ns [1..])
+combinations k ns = concat $ zipWith (\t i -> map (t:) (combinations (k - 1) (drop i ns))) ns [1..]
 

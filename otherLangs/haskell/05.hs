@@ -17,10 +17,11 @@ part2 input = case find (\x -> (x + 1) `notElem` input) input of
   Just n -> n + 1
   Nothing -> 0
 
+boolToInt :: Char -> Int
+boolToInt c = if c == 'B' || c == 'R' then 1 else 0
+
 parseLine :: [Char] -> Int
-parseLine line = foldl reducer 0 $ map bin line
-  where
-    reducer :: Int -> Int -> Int
-    reducer acc current = acc * 2 + current
-    bin :: Char -> Int
-    bin c = if c == 'B' || c == 'R' then 1 else 0
+parseLine line = binary $ map boolToInt line
+
+binary :: [Int] -> Int
+binary = foldl (\a c -> a * 2 + c) 0
