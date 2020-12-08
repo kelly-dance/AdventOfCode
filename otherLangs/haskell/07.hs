@@ -3,7 +3,8 @@ import Data.List.Split ( splitOn )
 import Data.List ( find )
 import qualified Data.Set as Set
 
-type Bag = ([Char], [(Int, [Char])])
+type SubBag = (Int, [Char])
+type Bag = ([Char], [SubBag])
 
 main :: IO ()
 main = do
@@ -37,12 +38,14 @@ part2 input = recurse "shiny gold"
     getBag target = find (\(key, _) -> key == target) input
 
 parseLine :: [Char] -> Bag
-parseLine line = (head halves, parsed)
+parseLine line = (head halves, parseGroup backhalf)
   where
+    halves :: [[Char]]
     halves = splitOn " bags contain " line
     backhalf :: [[[Char]]]
     backhalf = map (take 3 . splitOn " ") $ splitOn ", " (halves !! 1)
+    parseBag :: [[Char]] -> SubBag
     parseBag [count, c1, c2] = (read count, c1 ++ " " ++ c2)
+    parseGroup :: [[[Char]]] -> [SubBag]
     parseGroup [["no","other","bags."]] = []
     parseGroup group = map parseBag group
-    parsed = parseGroup backhalf
