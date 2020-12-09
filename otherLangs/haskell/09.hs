@@ -9,7 +9,7 @@ main = do
       p1 = part1 input
       p2 = part2 input p1
   print p1
-  print (foldl min (head p2) p2 + foldl max (head p2) p2)
+  print $ minimum p2 + maximum p2
 
 readInts :: [String] -> [Int]
 readInts = map read

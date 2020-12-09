@@ -1,4 +1,4 @@
-import { combos, filterGenerator, first, range, readFile, sum, subSequences, mapGenerator, iteratorSome } from './tools.ts';
+import { combos, filterGenerator, first, range, readFile, sum, subSequences, iteratorSome } from './tools.ts';
 
 const input = readFile('inputs/09.txt').split('\r\n').map(Number);
 
