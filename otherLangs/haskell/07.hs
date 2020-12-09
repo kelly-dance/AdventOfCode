@@ -9,7 +9,7 @@ type Bag = ([Char], [SubBag])
 main :: IO ()
 main = do
   contents <- readFile "inputs/07.txt"
-  let input = map parseLine $ splitOn "\n" contents
+  let input = map parseLine $ lines contents
   print $ part1 input
   print $ part2 input
 

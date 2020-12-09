@@ -1,10 +1,9 @@
 import Control.Monad ()
-import Data.List.Split ( splitOn )
 
 main :: IO ()
 main = do
   contents <- readFile "inputs/03.txt"
-  let input = map (cycle . map (=='#')) $ splitOn "\n" contents
+  let input = map (cycle . map (=='#')) $ lines contents
       slopes = [(1,1),(1,3),(1,5),(1,7),(2,1)]
   print $ solveSlope input (1,3)
   print $ product $ map (solveSlope input) slopes

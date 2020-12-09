@@ -4,7 +4,7 @@ import Data.List.Split ( splitOn )
 main :: IO ()
 main = do
   contents <- readFile "inputs/02.txt"
-  let input = map parseLine (splitOn "\n" contents)
+  let input = map parseLine $ lines contents
   print $ length (filter part1Checker input)
   print $ length (filter part2Checker input)
 

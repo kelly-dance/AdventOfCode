@@ -1,10 +1,12 @@
-import { combos, filterGenerator, product, readFile, sum } from './tools.ts';
+import { combos, filterGenerator, first, product, readFile, sum } from './tools.ts';
 
 const nums = readFile('./inputs/01.txt').split('\n').map(Number);
 
 console.log(...[2,3].map(s => product(
-  filterGenerator(
-    () => combos(nums, s),
-    ns => sum(ns) === 2020
-  )().next().value
+  first(
+    filterGenerator(
+      () => combos(nums, s),
+      ns => sum(ns) === 2020
+    )()
+  )
 )));

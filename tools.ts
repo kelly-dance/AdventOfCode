@@ -283,7 +283,7 @@ export const multiSampleCombos = function*<T extends any[]>(
   }
 }
 
-export type FutureGen<T> = () => Generator<T>;
+export type FutureGen<T> = () => Iterator<T>;
 
 export const naturalNumGenerator = function*(){
   for(let i = 1; true; i++) yield i;
@@ -350,9 +350,9 @@ export const filterGenerator = <T>(genFn: FutureGen<T>, pred: ((value: T) => boo
     const gen = genFn();
     while(true){
       const value = gen.next();
+      if(value.done) return;
       if(!pred(value.value)) continue;
-      if(!value.done) yield value.value
-      else return value.value;
+      yield value.value
     }
   }
 }
@@ -360,7 +360,12 @@ export const filterGenerator = <T>(genFn: FutureGen<T>, pred: ((value: T) => boo
 export const prependConstants = <T>(genFn: FutureGen<T>, values: T[]): FutureGen<T> => {
   return function*(){
     for(const value of values) yield value;
-    yield* genFn();
+    const yieldFrom = genFn();
+    while(true){
+      const { done, value } = yieldFrom.next();
+      if(done) break;
+      yield value;
+    }
   }
 }
 
@@ -526,5 +531,29 @@ export class DefaultMap<K, V> extends Map<K, V>{
 
   has(key: K){
     return true;
+  }
+}
+
+export const first = <T>(iter: Iterator<T>) => iter.next().value;
+
+export const subSequences = <T>(arr: T[], minLength = 1, maxLength = Infinity): FutureGen<T[]> => function*(){
+  for(let offset = 0; offset < arr.length - minLength; offset++){
+    for(let length = minLength; length < Math.min(arr.length - offset, maxLength); length++){
+      yield arr.slice(offset, offset + length);
+    }
+  }
+}
+
+export const subSequencesOfSize = <T>(arr: T[], size: number): FutureGen<T[]> => function*(){
+  for(let offset = 0; offset < arr.length - size; offset++){
+    yield arr.slice(offset, offset + size);
+  }
+}
+
+export const iteratorSome = <T>(iter: Iterator<T>, pred: (arg: T) => boolean) => {
+  while(true){
+    const { done, value } = iter.next();
+    if(done) return false;
+    if(pred(value)) return true;
   }
 }
