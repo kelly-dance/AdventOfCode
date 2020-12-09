@@ -8,8 +8,8 @@ main :: IO ()
 main = do
   contents <- readFile "inputs/08.txt"
   let input = map parseLine $ lines contents
-  print $ run input
-  print $ head $ filter fst $ map run $ makeInstructions input
+  print $ snd $ run input
+  print $ snd $ head $ filter fst $ map run $ makeInstructions input
 
 run :: [Instruction] -> (Bool, Int)
 run instructions = executor instructions 0 0 Set.empty
