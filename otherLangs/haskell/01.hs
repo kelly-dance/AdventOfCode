@@ -3,12 +3,9 @@ import Control.Monad ()
 main :: IO ()
 main = do
   contents <- readFile "inputs/01.txt"
-  let input = readInts $ lines contents
+  let input = map read $ lines contents
   print $ product $ head $ filter ((2020==) . sum) $ combinations 2 input
   print $ product $ head $ filter ((2020==) . sum) $ combinations 3 input
-
-readInts :: [String] -> [Int]
-readInts = map read
 
 combinations :: Int -> [Int] -> [[Int]]
 combinations 1 ns = map (:[]) ns

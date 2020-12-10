@@ -14,13 +14,14 @@ main = do
 readInts :: [String] -> [Int]
 readInts = map read
 
-checkIndex :: [Int] -> Int -> Bool
-checkIndex input i = (input !! (i + 25)) `notElem` map sum (combinations 2 $ take 25 $ drop i input)
-
 part1 :: [Int] -> Int
-part1 input = input !! (partial + 25)
+part1 input = check (take 25 input) (drop 25 input)
   where
-    partial = fromMaybe 0 $ find (checkIndex input) [0 .. length input - 26]
+    check _ [] = 0
+    check prior rest = if any (\xs -> sum xs == head rest) (combinations 2 prior) then
+      check (tail prior ++ [head rest]) $ tail rest
+    else
+      head rest
 
 part2 :: [Int] -> Int -> [Int]
 part2 input target = fromMaybe [] $ find (\xs -> sum xs == target) $ contiguousSubsequences input 2

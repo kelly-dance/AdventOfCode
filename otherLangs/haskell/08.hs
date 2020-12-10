@@ -36,7 +36,7 @@ toggleInstruction ("jmp", arg) = ("nop", arg)
 toggleInstruction ("nop", arg) = ("jmp", arg)
 toggleInstruction i = i
 
-parseLine ::[Char] -> Instruction
+parseLine :: [Char] -> Instruction
 parseLine line = (head split, read $ filter (/='+') $ split !! 1)
   where
     split = splitOn " " line
