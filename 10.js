@@ -12,15 +12,15 @@ for(const [prev, curr] of zip(input, input.slice(1))){
   if(curr - prev === 3) threes++;
 }
 
+console.log(ones, threes);
 console.log(ones * threes);
 
 const from = memoize(index => {
-  if(index === input.length - 1) return 1;
   const n = input[index];
   let score = 0;
   for(let i = index + 1; input[i] - n <= 3 && i < input.length; i++) score += from(i);
   return score;
-});
+}, new Map().set(input.length - 1, 1));
 
 console.log(from(0));
 
@@ -39,4 +39,4 @@ for(const [prev, curr] of zip(input, input.slice(1))){
   }
 }
 
-console.log(product(straights.map(formula)))
+console.log(product(straights.map(formula)));

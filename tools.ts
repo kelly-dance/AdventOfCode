@@ -398,7 +398,10 @@ export const binSearch = <T>(
   return kStart - 1;
 }
 
-export const inRange = (n: number, lower: number, upper: number, inclusive: boolean) => {
+/**
+ * checks in number is in (lower, upper) or if the inclusive parameter is sent then [lower, upper]
+ */
+export const inRange = (n: number, lower: number, upper: number, inclusive: boolean = false) => {
   if(inclusive) return lower <= n && n <= upper;
   return lower < n && n < upper;
 }
