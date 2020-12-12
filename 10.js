@@ -12,7 +12,6 @@ for(const [prev, curr] of zip(input, input.slice(1))){
   if(curr - prev === 3) threes++;
 }
 
-console.log(ones, threes);
 console.log(ones * threes);
 
 const from = memoize(index => {

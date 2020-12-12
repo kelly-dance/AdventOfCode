@@ -560,3 +560,23 @@ export const iteratorSome = <T>(iter: Iterator<T>, pred: (arg: T) => boolean) =>
     if(pred(value)) return true;
   }
 }
+
+export type MultiDimArray<D extends 2 | 3, T> = D extends 2 ? T[][] : never
+
+export class Grid<D extends 2, T>{
+  private internal: MultiDimArray<D, T>;
+  dimensions: D;
+
+  constructor(dimensions: D, data: MultiDimArray<D, T>){
+    this.internal = data;
+    this.dimensions = dimensions;
+  }
+
+  get(coords: number[], wrapAround: boolean = false ) { // T | undefined
+
+  }
+
+  neighbors(coords: number[], wrapAround: boolean = false ){ // T[]
+
+  }
+}
