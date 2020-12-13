@@ -1,4 +1,4 @@
-import { inRange, readFile, sum } from './tools.ts';
+import { combos, countMatches, Grid, inRangeStd, readFile, sum } from './tools.ts';
 
 /**
  * @typedef {(0 | 1 | 2)[][]} State
@@ -27,7 +27,7 @@ const neighborsPart1 = (state, x, y) => around.filter(([dx, dy]) => state[x + dx
 const neighborsPart2 = (state, x, y) => around.filter(([dx, dy]) => {
   for(let d = 1; true; d++){
     const [nx, ny] = [x + dx * d, y + dy * d];
-    if(!inRange(nx, 0, state.length - 1, true) || !inRange(ny, 0, state[nx].length - 1, true)) return false;
+    if(!inRangeStd(nx, 0, state.length) || !inRangeStd(ny, 0, state[nx].length)) return false;
     if(state[nx][ny] === 1) return false;
     if(state[nx][ny] === 2) return true;
   }
@@ -63,7 +63,9 @@ const update = (frame, neighborFn, spawnReq) => {
  */
 const solve = (neighborFn, req) => {
   let state = input.map(r => r.slice(0));
+  // let ctr = 0;
   while(true){
+    // console.log(ctr++);
     const [updated, newstate] = update(state, neighborFn, req);
     if(!updated) break;
     state = newstate;

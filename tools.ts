@@ -156,18 +156,21 @@ export const reverseNumber = (n: number) => numberFromDigits(digitsOf(n).reverse
 
 export const reverseBigInt = (n: bigint) => bigIntFromDigits(digitsOfBigInt(n).reverse());
 
-export const combos = function*<T>(arr: T[], times: number): Generator<T[]> {
-  if(times < 1 || Math.floor(times) !== times) return;
-  if(times===1){
-    for(const elem of arr) yield [elem];
-  }else{
-    for(const elem of arr){
-      const lowerGen = combos(arr, times-1);
-      for(const rest of lowerGen){
-        yield [elem, ...rest];
+export const combos = function*<T>(arr: T[], times: number, lazy = true): Generator<T[]> {
+  function* helper(index: number, result: T[]): Generator<T[]> {
+    if(index === times - 1){
+      for(const elem of arr) {
+        result[index] = elem;
+        yield result;
+      }
+    }else{
+      for(const elem of arr){
+        result[index] = elem;
+        yield* helper(index + 1, result);
       }
     }
   }
+  yield* helper(0, new Array(times));
 }
 
 export const combosWithLowerTimes = function*<T>(arr: T[], times: number): Generator<T[]>{
@@ -200,6 +203,11 @@ export const zip = <R extends any[][]>(
   range(
     Math.min(...arrs.map(a => a.length))
   ).map(i => arrs.map(a => a[i])) as any;
+
+export const zipWith = <F, R extends any[][]>(
+  mapper: (args: { [K in keyof R]: R[K] extends (infer T)[] ? T : R[K] }) => F,
+  ...arrs: R
+): F[] => zip(...arrs).map(group => mapper(group as any));
 
 export const readFile = (path: string) => (new TextDecoder("utf-8")).decode(Deno.readFileSync(path));
 
@@ -283,7 +291,7 @@ export const multiSampleCombos = function*<T extends any[]>(
   }
 }
 
-export type FutureGen<T> = () => Iterator<T>;
+export type FutureGen<T> = () => Generator<T>;
 
 export const naturalNumGenerator = function*(){
   for(let i = 1; true; i++) yield i;
@@ -405,6 +413,11 @@ export const inRange = (n: number, lower: number, upper: number, inclusive: bool
   if(inclusive) return lower <= n && n <= upper;
   return lower < n && n < upper;
 }
+
+/**
+ * [lower, upper)
+ */
+export const inRangeStd = (n: number, lower: number, upper: number) => lower <= n && n < upper;
 
 export const countMatches = <T>(arr: T[], pred: ((arg: T) => boolean)) => arr.reduce((acc, current) => pred(current) ? acc + 1 : acc, 0);
 
@@ -561,22 +574,139 @@ export const iteratorSome = <T>(iter: Iterator<T>, pred: (arg: T) => boolean) =>
   }
 }
 
-export type MultiDimArray<D extends 2 | 3, T> = D extends 2 ? T[][] : never
+export const concat = <T>(arrs: T[][]): T[] => arrs.reduce((acc, cur) => [...acc, ...cur], []);
 
-export class Grid<D extends 2, T>{
+export const deepCopyArray = <T extends any[]>(arr: T): T => arr.map(elem => Array.isArray(elem) ? deepCopyArray(elem) : elem) as T;
+
+export type Sizes = 1 | 2 | 3 | 4 | 5;
+export type MultiDimArray<D extends Sizes, T> = [never, T[], T[][], T[][][], T[][][][], T[][][][][]][D];
+export type TupleSizes<D extends Sizes, T> = [never, [T], [T,T], [T,T,T], [T,T,T,T], [T,T,T,T,T]][D];
+
+export class Grid<D extends Sizes, T>{
   private internal: MultiDimArray<D, T>;
   dimensions: D;
+  sizes: TupleSizes<D, number>;
+  OUT_OF_BOUNDS = {};
 
-  constructor(dimensions: D, data: MultiDimArray<D, T>){
-    this.internal = data;
+  constructor(dimensions: D, data: MultiDimArray<D, T>, skipCopy: boolean = false){
+    this.internal = skipCopy ? data : deepCopyArray(data);
     this.dimensions = dimensions;
+    const sizes: number[] = [];
+    let prev: any = data;
+    for(let d = 0; d < dimensions; d++) {
+      sizes.push(prev.length)
+      prev = prev[0];
+    }
+    this.sizes = sizes as TupleSizes<D, number>;
   }
 
-  get(coords: number[], wrapAround: boolean = false ) { // T | undefined
-
+  *neighborOffsets(): Generator<TupleSizes<D, number>> {
+    yield* combos([-1,0,1], this.dimensions) as Generator<TupleSizes<D, number>>;
   }
 
-  neighbors(coords: number[], wrapAround: boolean = false ){ // T[]
+  private getHelper(arr: any, coords: number[], wrapAround: boolean = true): T[] | T | Grid<D,T>["OUT_OF_BOUNDS"] {
+    if(!arr) return this.OUT_OF_BOUNDS;
+    if(coords.length === 0) return Array.isArray(arr) ? this.OUT_OF_BOUNDS : arr;
+    return wrapAround ? this.getHelper(arr[mod(coords[0], arr.length)], coords.slice(1), wrapAround) : this.getHelper(arr[coords[0]], coords.slice(1), wrapAround);
+  }
 
+  get(coords: TupleSizes<D, number>, wrapAround: boolean = false): T | Grid<D,T>["OUT_OF_BOUNDS"] {
+    return this.getHelper(this.internal, coords, wrapAround);
+  }
+
+  set(coords: TupleSizes<D, number>, value: T): this {
+    const arr = this.getHelper(this.internal, coords.slice(0, -1)) as T[];
+    arr[mod(coords[coords.length - 1], arr.length)] = value;
+    return this;
+  }
+
+  *castRay(
+    origin: TupleSizes<D, number>,
+    velocity: TupleSizes<D, number>,
+    wrapAround: boolean = false
+  ): Generator<[coords: TupleSizes<D, number>, data: T]> {
+    for(let d = 1; true; d++){
+      let current: TupleSizes<D, number> = zipWith(sum, origin as number[], velocity.map(n => n * d)) as TupleSizes<D, number>;
+      if(!wrapAround && current.some((n, d) => inRangeStd(n, 0, this.sizes[d]))) return;
+      yield [current, this.get(current, true) as any];
+    }
+  }
+
+  neighbors(coords: TupleSizes<D, number>, wrapAround: boolean = false): [coords: TupleSizes<D, number>, data: T][]{
+    const neighbors: [coords: TupleSizes<D, number>, data: T][] = [];
+    for(const offset of this.neighborOffsets()){
+      const specific = zipWith(sum, coords as number[], offset as number[]) as TupleSizes<D, number>;
+      if(zipWith(([a,b]) => a === b, specific, coords).every(id)) continue;
+      const data = this.get(specific, wrapAround);
+      if(data !== this.OUT_OF_BOUNDS) neighbors.push([specific, data as any]);
+    }
+    return neighbors;
+  }
+
+  clone(): Grid<D, T> {
+    return new Grid(this.dimensions, this.internal);
+  }
+
+  *entries(lazy = true): Generator<[coords: TupleSizes<D, number>, data: T]> {
+    function* helper(arr: any[], coords: number[], dim: number): Generator<any> {
+      for(let i = 0; i < arr.length; i++){
+        const elem = arr[i];
+        coords[dim] = i;
+        if(Array.isArray(elem)) yield* helper(elem, coords, dim + 1);
+        else yield [lazy ? coords : coords.slice(0), elem];
+      }
+    }
+    yield* helper(this.internal, new Array(this.dimensions), 0);
+  }
+
+  keys(lazy = true): Generator<TupleSizes<D, number>> {
+    return mapGenerator(() => this.entries(lazy), ([coords, _]) => coords)();
+  }
+
+  *values(): Generator<T> {
+    function* helper(arr: any[]): Generator<any> {
+      for(let i = 0; i < arr.length; i++){
+        const elem = arr[i];
+        if(Array.isArray(elem)) yield* helper(elem);
+        else yield elem;
+      }
+    }
+    yield* helper(this.internal);
+  }
+
+  forEach(callback: (value: T, indicies: TupleSizes<D, number>, self: this) => void, lazy = true): this {
+    for(const [index, value] of this.entries(lazy)){
+      callback(value, index, this);
+    }
+    return this;
+  }
+
+  map<R>(callback: (value: T, indicies: TupleSizes<D, number>, self: this) => R, lazy = true): Grid<D, R> {
+    const mapper = (arr: any[], coords: number[], dim: number): any => arr.map((elem, index) => {
+      coords[dim] = index;
+      if(Array.isArray(elem)) return mapper(elem, coords, dim + 1);
+      return callback(elem as T, (lazy ? coords : coords.slice(0)) as TupleSizes<D, number>, this)
+    })
+    return new Grid<D, R>(this.dimensions, mapper(this.internal, new Array(this.dimensions), 0), true);
+  }
+
+  reduce<R>(reducer: (acc: R, value: T, indicies: TupleSizes<D, number>, self: this) => R, initial: R, lazy = true){
+    let acc = initial;
+    for(const [coords, value] of this.entries(lazy)){
+      acc = reducer(acc, value, coords, this);
+    }
+    return acc;
+  }
+
+  asArray(copy: boolean = false): MultiDimArray<D, T> {
+    return copy ? deepCopyArray(this.internal) : this.internal;
+  }
+
+  equals(other: Grid<Sizes, any>){
+    if(this.dimensions !== other.dimensions) return false;
+    for(const [a, b] of zipGenerators(this.values.bind(this), other.values.bind(other))()){
+      if(a !== b) return false;
+    }
+    return true;
   }
 }
