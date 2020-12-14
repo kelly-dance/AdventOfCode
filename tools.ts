@@ -710,3 +710,5 @@ export class Grid<D extends Sizes, T>{
     return true;
   }
 }
+
+export const zipWithIndex = <T>(arr: T[]): [value: T, index: number][] => arr.map((v, i) => [v, i]);

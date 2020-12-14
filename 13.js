@@ -1,4 +1,4 @@
-import { mod, readFile, zip } from './tools.ts';
+import { mod, productBigInt, readFile, sumBigInt, zip } from './tools.ts';
 
 const [mytime, busses] = readFile('inputs/13.txt').split('\r\n');
 const goal = Number(mytime)
@@ -28,14 +28,11 @@ const inv = (a, m) => {
 }
 
 const CRT = (num, rem, k) => {
-  let prod = 1n
-  for(let i = 0; i< k; i++) prod = prod * num[i] 
-  let result = 0n
-  for(let i = 0n; i< k; i++){
-    let pp = prod / num[i]
-    result = result + rem[i] * inv(pp, num[i]) * pp 
-  }
-  return result % prod 
+  const prod = productBigInt(num);
+  return sumBigInt(zip(rem,num).map(([r,n]) => {
+    const pp = prod / n
+    return r * inv(pp, n) * pp 
+  })) % prod;
 }
 
 const num = basic.map(([n,_]) => n).map(BigInt);
