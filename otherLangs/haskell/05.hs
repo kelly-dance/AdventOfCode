@@ -1,5 +1,4 @@
 import Control.Monad ()
-import Data.List.Split ( splitOn )
 import Data.List ( find )
 
 main :: IO ()

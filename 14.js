@@ -36,7 +36,7 @@ const input = readFile('inputs/14.txt').split('\r\n').map(line => {
 })();
 
 
-(() => {
+(() => { // PART 2
   /** @type {string} */
   let mask = input[0].value;
   /** @type {Map<number,number>} */
@@ -51,13 +51,12 @@ const input = readFile('inputs/14.txt').split('\r\n').map(line => {
         const loc = zip(ins.location.toString(2).padStart(36, '0').split(''), mask.split('')).map(([b, m]) => ({0:b,1:'1',X:'X'}[m]));
         const zipped = zipWithIndex(loc).filter(([c]) => c === 'X');
         const count = zipped.length;
-        const go = () => mem.set(parseInt(loc.join(''), 2), ins.value);
         if(count > 0){
           for(const combo of combos(['0','1'], count)){
             for(let i = 0; i < count; i++) loc[zipped[i][1]] = combo[i];
-            go();
+            mem.set(parseInt(loc.join(''), 2), ins.value);
           }
-        } else go();
+        } else mem.set(parseInt(loc.join(''), 2), ins.value);
         break;
     }
   }

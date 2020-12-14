@@ -38,7 +38,7 @@ const part1 = input.reduce(({direction, position}, [instruction, arg]) => {
 
 console.log(Math.abs(part1.position[0]) +  Math.abs(part1.position[1]));
 
-const part2 = input.reduce(({direction, position, waypoint}, [instruction, arg]) => {
+const part2 = input.reduce(({position, waypoint}, [instruction, arg]) => {
   switch (instruction) {
     case 'L':
     case 'R':
@@ -57,7 +57,7 @@ const part2 = input.reduce(({direction, position, waypoint}, [instruction, arg])
       position[1] += arg * waypoint[1];
       break;
   }
-  return {direction, position, waypoint};
-}, {waypoint: [1,10], direction: 1, position: [0,0]})
+  return {position, waypoint};
+}, {waypoint: [1,10], position: [0,0]})
 
 console.log(Math.abs(part2.position[0]) +  Math.abs(part2.position[1]));
