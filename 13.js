@@ -2,7 +2,7 @@ import { mod, productBigInt, readFile, sumBigInt, zip } from './tools.ts';
 
 const [mytime, busses] = readFile('inputs/13.txt').split('\r\n');
 const goal = Number(mytime)
-const times = busses.split(',').filter(s => s !== 'x').map(Number).map(n => [n, n - goal % n, Math.floor(goal/n)*n + n]);
+const times = busses.split(',').filter(s => s !== 'x').map(Number).map(n => [n, n - goal % n, Math.floor(goal / n) * n + n]);
 
 const [a,b,_] = times.reduce(([bi, bs, bo], [ci, cs, co]) => cs < bs ? [ci, cs, co] : [bi, bs, bo]);
 console.log(a*b)
@@ -35,6 +35,6 @@ const CRT = (num, rem, k) => {
   })) % prod;
 }
 
-const num = basic.map(([n,_]) => n).map(BigInt);
-const rem = basic.map(([n,i]) => mod(n - i,n)).map(BigInt);
+const num = basic.map(([n, _]) => n).map(BigInt);
+const rem = basic.map(([n, i]) => mod(n - i,n)).map(BigInt);
 console.log(CRT(num, rem, basic.length))
