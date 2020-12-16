@@ -14,16 +14,28 @@ const parsedFields = fields.split('\r\n').map((l, i) => {
   }
 });
 
-const parsedNearby = nearby.split(/\r\n/).slice(1).map(l => l.split(',').map(Number))
+const parsedNearby = nearby
+  .split(/\r\n/)
+  .slice(1)
+  .map(l => l.split(',').map(Number))
 
-console.log(sum(parsedNearby.map(ns => sum(ns.filter(n => !parsedFields.some(({ranges}) => ranges.some(([lo, hi]) => inRange(n, lo, hi, true))))))))
+console.log(sum( // PART 1
+  parsedNearby.map(ns => sum(
+    ns.filter(
+      n => !parsedFields.some(({ranges}) => ranges.some(([lo, hi]) => inRange(n, lo, hi, true)))
+    )
+  ))
+))
 
+// Filter out tickets that contain a invalid number
 const valid = parsedNearby.filter(ns => !ns.some(n => !parsedFields.some(({ranges}) => ranges.some(([lo, hi]) => inRange(n, lo, hi, true)))))
 
-const mappings = Array.from({length: parsedFields.length}, (_, f) => Array.from({length: parsedFields.length}, (_, t) => {
-  return valid.every(ns =>  parsedFields[f].ranges.some(([lo, hi]) => inRange(ns[t], lo, hi, true)));
-}))
+// compare every field against every column of tickets
+const mappings = range(parsedFields.length).map(from => range(parsedFields.length).map(to => 
+  valid.every(ns =>  parsedFields[from].ranges.some(([lo, hi]) => inRange(ns[to], lo, hi, true)))
+))
 
+// backtracking to find the valid order
 const findOrder = (fields, prev = []) => {
   if(fields.length === prev.length) return prev;
   for(const field of fields){
@@ -36,6 +48,8 @@ const findOrder = (fields, prev = []) => {
 
 const parsedTicket = mine.split('\r\n')[1].split(',').map(Number)
 
-const order = findOrder(parsedFields);
-
-console.log(product(zipWithIndex(order).filter(([{name}]) => name.includes('departure')).map(([_, i]) => parsedTicket[i])));
+console.log(product( // PART 2
+  zipWithIndex(findOrder(parsedFields))
+    .filter(([{name}]) => name.includes('departure'))
+    .map(([_, i]) => parsedTicket[i])
+));

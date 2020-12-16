@@ -323,8 +323,8 @@ export const mapGenerator = <T, R>(
     const gen = genFn();
     while(true){
       const value = gen.next();
-      if(!value.done) yield fn(value.value)
-      else return fn(value.value);
+      if(value.done) return;
+      yield fn(value.value)
     }
   }
 }
