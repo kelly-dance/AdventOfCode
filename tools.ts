@@ -419,7 +419,7 @@ export const inRange = (n: number, lower: number, upper: number, inclusive: bool
  */
 export const inRangeStd = (n: number, lower: number, upper: number) => lower <= n && n < upper;
 
-export const countMatches = <T>(arr: T[], pred: ((arg: T) => boolean)) => arr.reduce((acc, current) => pred(current) ? acc + 1 : acc, 0);
+export const countMatches = <T>(arr: T[], pred: ((arg: T, index: number) => boolean)) => arr.reduce((acc, current, index) => pred(current, index) ? acc + 1 : acc, 0);
 
 export const union = <T>(...sets: Set<T>[]): Set<T> => new Set(sets.map(s => [...s]).flat(1));
 
@@ -604,18 +604,21 @@ export class Grid<D extends Sizes, T>{
     yield* combos([-1,0,1], this.dimensions) as Generator<TupleSizes<D, number>>;
   }
 
-  private getHelper(arr: any, coords: number[], wrapAround: boolean = true): T[] | T | Grid<D,T>["OUT_OF_BOUNDS"] {
-    if(!arr) return this.OUT_OF_BOUNDS;
-    if(coords.length === 0) return Array.isArray(arr) ? this.OUT_OF_BOUNDS : arr;
-    return wrapAround ? this.getHelper(arr[mod(coords[0], arr.length)], coords.slice(1), wrapAround) : this.getHelper(arr[coords[0]], coords.slice(1), wrapAround);
+  private getHelper(arr: any, coords: number[], idx: number = 0, wrapAround: boolean = true): T[] | T | Grid<D,T>["OUT_OF_BOUNDS"] {
+    if(arr === undefined) return this.OUT_OF_BOUNDS;
+    if(coords.length === idx) return arr;
+    return wrapAround ? 
+      this.getHelper(arr[mod(coords[idx], arr.length)], coords, idx + 1, wrapAround) :
+      this.getHelper(arr[coords[idx]], coords, idx + 1, wrapAround);
   }
 
   get(coords: TupleSizes<D, number>, wrapAround: boolean = false): T | Grid<D,T>["OUT_OF_BOUNDS"] {
-    return this.getHelper(this.internal, coords, wrapAround);
+    return this.getHelper(this.internal, coords, 0, wrapAround);
   }
 
   set(coords: TupleSizes<D, number>, value: T): this {
     const arr = this.getHelper(this.internal, coords.slice(0, -1)) as T[];
+    if(arr === this.OUT_OF_BOUNDS) return this;
     arr[mod(coords[coords.length - 1], arr.length)] = value;
     return this;
   }
