@@ -3,12 +3,12 @@ import { readFile } from './tools.ts';
 const input = readFile('inputs/15.txt').split(',').map(Number);
 
 const get = n => {
-  const history = new Map();
-  input.slice(0, -1).forEach((n, i) => history.set(n, i));
+  const history = new Array(n);
+  input.slice(0, -1).forEach((n, i) => history[n] = i);
   let prev = input[input.length - 1];
   for(let i = input.length; i < n; i++){
-    const idx = history.get(prev);
-    history.set(prev, i - 1);
+    const idx = history[prev];
+    history[prev] = i - 1;
     if(idx === undefined) prev = 0;
     else prev = i - idx - 1;
   }
