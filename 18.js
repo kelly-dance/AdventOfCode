@@ -24,9 +24,7 @@ const parseEqn = str => {
       }
       return [[nums, ops], seg.substring(1)];
     }else{
-      const end = seg.split('').findIndex(c => !/\d/.test(c));
-      const num = Number(seg.substring(0, end));
-      return [num, seg.substring(end)]
+      return [Number(seg.charAt(0)), seg.substring(1)]
     }
   }
   return parseNum('('+str+')')[0];
