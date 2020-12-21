@@ -1,4 +1,4 @@
-import { first, id, inRange, mapGenerator, product, range, readFile, sum, takeAll, zipWithIndex } from './tools.ts';
+import { inRange, product, range, readFile, sum, zipWithIndex } from './tools.ts';
 
 const [fields, mine, nearby] = readFile('inputs/16.txt').split('\r\n\r\n');
 

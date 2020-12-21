@@ -379,6 +379,8 @@ export const prependConstants = <T>(genFn: FutureGen<T>, values: T[]): FutureGen
 
 export const id = <T>(x: T) => x;
 
+export const succ = (x: number) => x + 1;
+
 export const binSearch = <T>(
   arr: T[],
   target: T,
@@ -424,6 +426,12 @@ export const countMatches = <T>(arr: T[], pred: ((arg: T, index: number) => bool
 export const union = <T>(...sets: Set<T>[]): Set<T> => new Set(sets.map(s => [...s]).flat(1));
 
 export const intersection = <T>(a: Set<T>, ...rest: Set<T>[]) => new Set<T>(takeAll(a.values()).filter(v => rest.every(set => set.has(v))));
+
+export const subtractSets = <T>(a: Set<T>, b: Set<T>, destructive: boolean = false): Set<T> => {
+  const base = destructive ? a : new Set(a);
+  for(const val of b) base.delete(val);
+  return base;
+}
 
 export const pickIntsFromString = (str: string) => str.match(/\d+/g)?.map(s => parseInt(s)) || [];
 
@@ -542,7 +550,12 @@ export class DefaultMap<K, V> extends Map<K, V>{
   }
 
   get(key: K): V {
-    return this.get(key) || this.derive(key);
+    return super.get(key) || this.derive(key);
+  }
+
+  apply(key: K, fn: (val: V, key: K) => V): this {
+    this.set(key, fn(this.get(key), key));
+    return this;
   }
 
   has(key: K){
@@ -550,7 +563,7 @@ export class DefaultMap<K, V> extends Map<K, V>{
   }
 }
 
-export const first = <T>(iter: Iterator<T>) => iter.next().value;
+export const takeFirst = <T>(iter: Iterator<T>) => iter.next().value;
 
 export const subSequences = <T>(arr: T[], minLength = 1, maxLength = Infinity): FutureGen<T[]> => function*(){
   for(let offset = 0; offset < arr.length - minLength; offset++){
@@ -715,3 +728,7 @@ export class Grid<D extends Sizes, T>{
 }
 
 export const zipWithIndex = <T>(arr: T[]): [value: T, index: number][] => arr.map((v, i) => [v, i]);
+
+export const first = <T>(arg: readonly [T, ...any]) => arg[0];
+export const second = <T>(arg: readonly [any, T, ...any]) => arg[1];
+export const third = <T>(arg: readonly [any, any, T, ...any]) => arg[2];
