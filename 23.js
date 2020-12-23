@@ -33,12 +33,11 @@ import { readFile, digitsOf, range, numberFromDigits, mod } from './tools.ts';
   const fin = nums.slice(1);
   
   console.log(numberFromDigits(fin.slice(0).reverse()))
-});//();
+})();
 
 /**
  * @typedef {{
  *  forward: Node,
- *  backward: Node,
  *  num: number,
  * }} Node
  */
@@ -49,45 +48,27 @@ import { readFile, digitsOf, range, numberFromDigits, mod } from './tools.ts';
   const itrLim = 10_000_000;
 
   /** @type {Node[]} */
-  const nodes = new Array(numLim+1);
+  const nodes = new Array(numLim + 1);
 
-  for(let i = 0; i < inputNums.length; i++){
-    const n = inputNums[i];
-    nodes[n] = {
-      forward: null,
-      backward: null,
-      num: n,
-    }
+  let prev;
+  for(let i = 0; i < numLim; i++){
+    const num = i < inputNums.length ? inputNums[i] : i + 1;
+    const cur = { num, forward: null };
+    if(prev) prev.forward = cur;
+    prev = cur;
+    nodes[num] = cur;
   }
-  for(let i = 0; i < inputNums.length; i++){
-    const n = inputNums[i];
-    nodes[n].forward = nodes[inputNums[i+1]]
-    nodes[n].backward = nodes[inputNums[i-1]]
-  }
-
-  for(let i = inputNums.length+1; i <= numLim; i++){
-    const cur = {
-      forward: null,
-      backward: nodes[i-1],
-      num: i
-    };
-    nodes[i] = cur;
-    if(i!==inputNums.length+1) nodes[i-1].forward = cur;
-  }
-
-  nodes[inputNums.length + 1].backward = nodes[inputNums[inputNums.length - 1]];
-  nodes[inputNums[inputNums.length - 1]].forward = nodes[inputNums.length + 1];
-  nodes[inputNums[0]].backward = nodes[numLim];
-  nodes[numLim].forward = nodes[inputNums[0]];
 
   /** @type {Node} */
   let cur = nodes[inputNums[0]];
+
+  nodes[numLim].forward = cur;
 
   for(let _ = 0; _ <= itrLim; _++){
     const next3 = cur.forward;
     const target = (() => {
       for(let i = 1; i < 5; i++){
-        const attempt = nodes[mod(cur.num-i-1,numLim)+1];
+        const attempt = nodes[mod(cur.num - i - 1, numLim) + 1];
         let check = next3;
         let valid = true;
         for(let j = 0; j < 3; j++){
@@ -100,21 +81,12 @@ import { readFile, digitsOf, range, numberFromDigits, mod } from './tools.ts';
         if(valid) return attempt;
       }
     })();
-
     const afterTarget = target.forward;
-
     cur.forward = next3.forward.forward.forward;
-    next3.forward.forward.forward.backward = cur;
-
     target.forward = next3;
-    next3.backward = target;
     next3.forward.forward.forward = afterTarget;
-    afterTarget.backward = next3.forward.forward;
-
-
     cur = cur.forward;
   }
 
   console.log(nodes[1].forward.num * nodes[1].forward.forward.num);
 })();
-
