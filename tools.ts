@@ -43,7 +43,7 @@ export function bools(max: number): boolean[] {
 
 export function mod(n: number, t: number){
   if(n>=0) return n%t;
-  else return t+(n%t);
+  else return (t+(n%t))%t;
 }
 
 export function sudokuSolve(b: number[][]): number[][] | undefined {
@@ -435,7 +435,7 @@ export const subtractSets = <T>(a: Set<T>, b: Set<T>, destructive: boolean = fal
 
 export const pickIntsFromString = (str: string) => str.match(/\d+/g)?.map(s => parseInt(s)) || [];
 
-export class MultiMap<Ks extends any[], T>{
+export class MultiMap<Ks extends any[], T> implements Map<Ks, T>{
   numKeys: number;
   root: Map<any, any>;
   size: number;
@@ -457,7 +457,7 @@ export class MultiMap<Ks extends any[], T>{
   }
 
   set(keys: Ks, value: T) {
-    if(keys.length !== this.numKeys) return;
+    if(keys.length !== this.numKeys) return this;
     let current = this.root;
     for(let layer = 0; layer < this.numKeys - 1; layer++){
       if(!current.has(keys[layer])) current.set(keys[layer], new Map())
@@ -465,6 +465,7 @@ export class MultiMap<Ks extends any[], T>{
     }
     if(!current.has(keys[this.numKeys - 1])) this.size++;
     current.set(keys[this.numKeys - 1], value);
+    return this;
   }
 
   has(keys: Ks){
@@ -527,6 +528,44 @@ export class MultiMap<Ks extends any[], T>{
       cb(value, keys, this);
     }
   }
+
+  get [Symbol.toStringTag](){
+    return 'MultiMap';
+  }
+
+  *[Symbol.iterator](){
+    yield* this.entries();
+  }
+
+  /** does nothing if key does not exist */
+  apply(key: Ks, fn: (val: T, key: Ks) => T){
+    if(this.has(key)) this.set(key, fn(this.get(key) as T, key));
+    return this;
+  }
+}
+
+export class DefaultMultiMap<K extends any[], V> extends MultiMap<K, V>{
+  derive: (key: K) => V;
+
+  constructor(keys: Sizes, deriveDefault: (key: K) => V){
+    super(keys);
+    this.derive = deriveDefault;
+  }
+
+  get(key: K): V {
+    const stored = super.get(key);
+    if(stored === undefined) return this.derive(key);
+    return stored;
+  }
+
+  apply(key: K, fn: (val: V, key: K) => V): this {
+    this.set(key, fn(this.get(key), key));
+    return this;
+  }
+
+  has(key: K){
+    return true;
+  }
 }
 
 export const memoizeMulti = <Ks extends any[], R>(fn: (...args: Ks) => R, defaults?: MultiMap<Ks, R>): ((...args: Ks) => R) => {
@@ -550,7 +589,9 @@ export class DefaultMap<K, V> extends Map<K, V>{
   }
 
   get(key: K): V {
-    return super.get(key) || this.derive(key);
+    const stored = super.get(key);
+    if(stored === undefined) return this.derive(key);
+    return stored;
   }
 
   apply(key: K, fn: (val: V, key: K) => V): this {

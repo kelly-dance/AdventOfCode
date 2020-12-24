@@ -7,15 +7,12 @@ import { readFile, digitsOf, range, numberFromDigits, mod } from './tools.ts';
   const lim = 100;
   
   for(let i = 0; i < lim; i++){
-    // console.log('cups',numberFromDigits(nums.slice(0).reverse()))
     const [ ...next3 ] = range(3).map(j => nums[j+1]);
-    // console.log('pickup', next3)
     let target;
     for(let j = 1; j < 5; j++){
       target = mod((nums[0]-j-1),9) + 1;
       if(!next3.includes(target)) break;
     }
-    // console.log('destination', target)
     let nextNums = []
     for(const n of nums.slice(1)){
       if(next3.includes(n)) continue;
