@@ -2,7 +2,7 @@
 
 I solved all the problems in JavaScript. I wrote many shared utilities in TypeScript (with I also use for solving projecteuler.net). I run my js with Deno.
 
-I solve about half of them (so far) is Haskell and one or two in other languages.
+I solved about half of them (so far) in Haskell and one or two in other languages.
 
 ## My Placements
 ```
