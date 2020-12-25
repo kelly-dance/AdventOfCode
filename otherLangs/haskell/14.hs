@@ -2,6 +2,8 @@ import Control.Monad ()
 import Data.List.Split ( splitOn )
 import Data.Ord ()
 
+-- INCOMPLETE
+
 main :: IO ()
 main = do
   contents <- readFile "inputs/14.txt"
