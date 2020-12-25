@@ -1,5 +1,5 @@
 import { readFile } from './tools.ts';
-console.time()
+
 const [card, door] = readFile('./inputs/25.txt').split('\r\n').map(Number);
 
 let cardSize = 0;
@@ -14,4 +14,3 @@ while(!cardSize){
 let f = 1;
 for(let i = 0; i < cardSize; i++) f = (f * door) % 20201227;
 console.log(f);
-console.timeEnd()
