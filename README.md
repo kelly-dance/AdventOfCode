@@ -1,4 +1,4 @@
-# Advent of Code 2020 Solution
+# Advent of Code 2020 Solutions
 
 I solved all the problems in JavaScript. I wrote many shared utilities in TypeScript (with I also use for solving projecteuler.net). I run my js with Deno.
 
