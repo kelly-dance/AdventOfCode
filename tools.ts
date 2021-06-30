@@ -1,3 +1,6 @@
+import { Md5Hash } from 'https://deno.land/x/checksum@1.4.0/md5.ts';
+import { encodeToString } from 'https://deno.land/std@0.53.0/encoding/hex.ts';
+
 export const Digits = [0,1,2,3,4,5,6,7,8,9];
 
 /**
@@ -103,6 +106,15 @@ export const primeFactors = (n: number, given: number[] | null = null) => {
   return factors;
 }
 
+export const groupBy = <T, K>(arr: T[], pred: (arg: T) => K): DefaultMap<K, T[]> => {
+  const map = new DefaultMap<K, T[]>(() => []);
+  for(const val of arr){
+    const computed = pred(val);
+    map.get(computed).push(val);
+  }
+  return map;
+}
+
 export const countRepeats = <T>(arr: T[]): Map<T, number> => {
   const map = new Map();
   for(const elem of arr){
@@ -137,7 +149,7 @@ export const digitsOfBigInt = (n: bigint, pad: number | null = null) => {
 }
 
 export const isPalindrome = (n: number) => {
-  const digits =digitsOf(n);
+  const digits = digitsOf(n);
   for(let i = 0; i < digits.length / 2; i++) if(digits[i] !== digits[digits.length - i - 1]) return false;
   return true;
 }
@@ -156,7 +168,7 @@ export const reverseNumber = (n: number) => numberFromDigits(digitsOf(n).reverse
 
 export const reverseBigInt = (n: bigint) => bigIntFromDigits(digitsOfBigInt(n).reverse());
 
-export const combos = function*<T>(arr: T[], times: number, lazy = true): Generator<T[]> {
+export const combos = function*<T>(arr: T[], times: number): Generator<T[]> {
   function* helper(index: number, result: T[]): Generator<T[]> {
     if(index === times - 1){
       for(const elem of arr) {
@@ -173,9 +185,33 @@ export const combos = function*<T>(arr: T[], times: number, lazy = true): Genera
   yield* helper(0, new Array(times));
 }
 
+export const nonRepeatingCombos = function*<T>(arr: T[], times: number): Generator<T[]> {
+  function* helper(index: number, start: number, result: T[]): Generator<T[]> {
+    if(index === times - 1){
+      for(let i = start; i < arr.length; i++){
+        result[index] = arr[i];
+        yield result;
+      }
+    }else{
+      for(let i = start; i < arr.length; i++){
+        const elem = arr[i];
+        result[index] = elem;
+        yield* helper(index + 1, i + 1, result);
+      }
+    }
+  }
+  yield* helper(0, 0, new Array(times));
+}
+
 export const combosWithLowerTimes = function*<T>(arr: T[], times: number): Generator<T[]>{
   for(let i = times; i > 0; i--){
     yield* combos(arr,i);
+  }
+}
+
+export const nonRepeatingCombosWithLowerTimes = function*<T>(arr: T[], times: number): Generator<T[]>{
+  for(let i = times; i > 0; i--){
+    yield* nonRepeatingCombos(arr,i);
   }
 }
 
@@ -209,7 +245,7 @@ export const zipWith = <F, R extends any[][]>(
   ...arrs: R
 ): F[] => zip(...arrs).map(group => mapper(group as any));
 
-export const readFile = (path: string) => (new TextDecoder("utf-8")).decode(Deno.readFileSync(path));
+export const readFile = (path: string) => (new TextDecoder("utf-8")).decode(Deno.readFileSync(path)).replaceAll('\r','');
 
 export const isCoprime = (a: number, b: number) => {
   for(let i = 2; i <= Math.min(a, b); i++) if(b % i === 0 && a % i === 0) return false;
@@ -590,7 +626,11 @@ export class DefaultMap<K, V> extends Map<K, V>{
 
   get(key: K): V {
     const stored = super.get(key);
-    if(stored === undefined) return this.derive(key);
+    if(stored === undefined) {
+      const computed = this.derive(key);
+      this.set(key, computed)
+      return computed;
+    }
     return stored;
   }
 
@@ -607,8 +647,12 @@ export class DefaultMap<K, V> extends Map<K, V>{
 export const takeFirst = <T>(iter: Iterator<T>) => iter.next().value;
 
 export const subSequences = <T>(arr: T[], minLength = 1, maxLength = Infinity): FutureGen<T[]> => function*(){
-  for(let offset = 0; offset < arr.length - minLength; offset++){
-    for(let length = minLength; length < Math.min(arr.length - offset, maxLength); length++){
+  if(minLength === 0){
+    yield [];
+    minLength = 1;
+  }
+  for(let offset = 0; offset <= arr.length - minLength; offset++){
+    for(let length = minLength; length <= Math.min(arr.length - offset, maxLength); length++){
       yield arr.slice(offset, offset + length);
     }
   }
@@ -770,6 +814,149 @@ export class Grid<D extends Sizes, T>{
 
 export const zipWithIndex = <T>(arr: T[]): [value: T, index: number][] => arr.map((v, i) => [v, i]);
 
-export const first = <T>(arg: readonly [T, ...any]) => arg[0];
-export const second = <T>(arg: readonly [any, T, ...any]) => arg[1];
-export const third = <T>(arg: readonly [any, any, T, ...any]) => arg[2];
+export const first = <T>(arg: readonly [T, ...any]): T => arg[0];
+export const second = <T>(arg: readonly [any, T, ...any]): T => arg[1];
+export const third = <T>(arg: readonly [any, any, T, ...any]): T => arg[2];
+
+export const add = (x: number) => (y: number) => x + y;
+
+export class Vec2{
+  x: number;
+  y: number;
+
+  static SIDES = [
+    new Vec2(0, 1),
+    new Vec2(1, 0),
+    new Vec2(0, -1),
+    new Vec2(-1, 0),
+  ]
+
+  static DIAGONALS = [
+    new Vec2(1, 1),
+    new Vec2(1, -1),
+    new Vec2(-1, 1),
+    new Vec2(-1, -1),
+  ]
+
+  constructor(x: number, y?: number){
+    this.x = x;
+    this.y = y ?? x;
+  }
+
+  add(otr: Vec2): Vec2 {
+    return new Vec2(this.x + otr.x, this.y + otr.y)
+  }
+
+  mult(scalar: number): Vec2 {
+    return new Vec2(this.x * scalar, this.y * scalar)
+  }
+
+  sub(otr: Vec2): Vec2 {
+    return this.add(otr.mult(-1));
+  }
+
+  div(scalar: number): Vec2 {
+    return this.mult(1 / scalar);
+  }
+
+  len(){
+    return (this.x ** 2 + this.y ** 2) ** 0.5;
+  }
+
+  manhattenLen(){
+    return Math.abs(this.x) + Math.abs(this.y)
+  }
+
+  eq(otr: Vec2, EPSILON = 0.00001){
+    return Math.abs(this.x - otr.x) < EPSILON && Math.abs(this.y - otr.y) < EPSILON;
+  }
+
+  normalized(): Vec2 {
+    return this.div(this.len())
+  }
+
+  angle(): number {
+    return Math.atan2(this.y, this.x);
+  }
+}
+
+export function group<T>(arr: T[], size: 2): [T, T][]
+export function group<T>(arr: T[], size: 3): [T, T, T][]
+export function group<T>(arr: T[], size: 4): [T, T, T, T][]
+export function group<T>(arr: T[], size: 5): [T, T, T, T, T][]
+export function group<T>(arr: T[], size: number): T[][]
+export function group<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for(let i = 0; i <= arr.length - size; i += size) result.push(arr.slice(i, i + size));
+  return result;
+}
+
+export const uint8ToHex = (()=>{
+  const hexTable = new TextEncoder().encode('0123456789abcdef');
+  const decoder = new TextDecoder();
+  return (data: Uint8Array) => {
+    const out = new Uint8Array(data.length * 2);
+    for(let i = 0; i < data.length; i++){
+      out[i * 2] = hexTable[data[i] >> 4]
+      out[i * 2 + 1] = hexTable[data[i] & 0x0F]
+    }
+    return decoder.decode(out);
+  }
+})();
+
+export const MD5 = (()=>{
+  const md5 = new Md5Hash();
+  const encoder = new TextEncoder();
+  const that = {
+    rawToRaw: (data: Uint8Array): Uint8Array => {
+      return md5.digest(data);
+    },
+    rawToStr: (data: Uint8Array): string => {
+      return encodeToString(that.rawToRaw(data));
+    },
+    strToRaw: (str: string): Uint8Array => {
+      return that.rawToRaw(encoder.encode(str));
+    },
+    strToStr: (str: string): string => {
+      return encodeToString(that.rawToRaw(encoder.encode(str)));
+    },
+  };
+  return that;
+})();
+
+export function* permutations<T>(arr: T[]): Generator<T[]> {
+  if(arr.length === 0) {
+    yield [];
+    return;
+  }
+  if(arr.length === 1) {
+    yield arr.slice();
+    return;
+  }
+  for(let i = 0; i < arr.length; i++){
+    const without = [...arr.slice(0, i), ...arr.slice(i + 1)];
+    for(const perm of permutations(without)){
+      yield [arr[i], ...perm];
+    }
+  }
+}
+
+export const minBy = <T>(data: T[], fn: (data: T, i: number, o: T[]) => number): T => {
+  if(data.length === 0) throw new Error('This function needs atleast on arg');
+  let best: [number, T] = [fn(data[0], 0, data), data[0]];
+  for(let i = 1; i < data.length; i++){
+    const score = fn(data[i], i, data);
+    if(score < best[0]) best = [score, data[i]];
+  }
+  return best[1];
+}
+
+export const maxBy = <T>(data: T[], fn: (data: T, i: number, o: T[]) => number): T => {
+  if(data.length === 0) throw new Error('This function needs atleast on arg');
+  let best: [number, T] = [fn(data[0], 0, data), data[0]];
+  for(let i = 1; i < data.length; i++){
+    const score = fn(data[i], i, data);
+    if(score > best[0]) best = [score, data[i]];
+  }
+  return best[1];
+}
