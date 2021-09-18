@@ -1,2 +1,0 @@
-add1 = add(1);
-main = x => add1(x);

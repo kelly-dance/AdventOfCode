@@ -235,7 +235,7 @@ export const factors = (n: number) => {
 
 export const zip = <R extends any[][]>(
   ...arrs: R
-): { [K in keyof R]: R[K] extends (infer T)[] ? T : R[K] }[] => 
+): { [K in keyof R]: R[K] extends (infer T)[] ? T : never }[] => 
   range(
     Math.min(...arrs.map(a => a.length))
   ).map(i => arrs.map(a => a[i])) as any;
@@ -880,6 +880,50 @@ export class Vec2{
   }
 }
 
+export class Vec3{
+  x: number;
+  y: number;
+  z: number;
+
+  constructor(x: number, y?: number, z?: number){
+    this.x = x;
+    this.y = y ?? x;
+    this.z = z ?? x;
+  }
+
+  add(otr: Vec3): Vec3 {
+    return new Vec3(this.x + otr.x, this.y + otr.y, this.z + otr.z)
+  }
+
+  mult(scalar: number): Vec3 {
+    return new Vec3(this.x * scalar, this.y * scalar, this.z * scalar)
+  }
+
+  sub(otr: Vec3): Vec3 {
+    return this.add(otr.mult(-1));
+  }
+
+  div(scalar: number): Vec3 {
+    return this.mult(1 / scalar);
+  }
+
+  len(){
+    return (this.x ** 2 + this.y ** 2 + this.z ** 2) ** 0.5;
+  }
+
+  manhattenLen(){
+    return Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z)
+  }
+
+  eq(otr: Vec3, EPSILON = 0.00001){
+    return Math.abs(this.x - otr.x) < EPSILON && Math.abs(this.y - otr.y) < EPSILON && Math.abs(this.z - otr.z) < EPSILON;
+  }
+
+  normalized(): Vec3 {
+    return this.div(this.len())
+  }
+}
+
 export function group<T>(arr: T[], size: 2): [T, T][]
 export function group<T>(arr: T[], size: 3): [T, T, T][]
 export function group<T>(arr: T[], size: 4): [T, T, T, T][]
@@ -959,4 +1003,13 @@ export const maxBy = <T>(data: T[], fn: (data: T, i: number, o: T[]) => number):
     if(score > best[0]) best = [score, data[i]];
   }
   return best[1];
+}
+
+export const pairs = <R extends any[][]>(
+  ...arrs: R
+): { [K in keyof R]: R[K] extends (infer T)[] ? T : never }[] => {
+  if(arrs.length === 0) return [];
+  if(arrs.length === 1) return arrs[0].map(e => [e]) as any;
+  const subPairs = pairs(...arrs.slice(1));
+  return arrs[0].map(elem => subPairs.map(sub => [elem, ...sub])).flat(1) as any;
 }
