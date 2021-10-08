@@ -137,6 +137,12 @@ export const prepareState = (program: (bigint | number)[]): MachineState => {
   }
 }
 
+export const cloneState = (state: MachineState) => {
+  const memory = new MachineMemory();
+  for(const [key, value] of state.memory) memory.set(key, value);
+  return { ...state, memory };
+}
+
 const opNameMap = new Map<bigint, string>();
 opNameMap.set(1n, 'ADD');
 opNameMap.set(2n, 'MULT');
@@ -215,6 +221,11 @@ export const run = (state: MachineState, mInterface: MachineInterface, debug = f
   return state;
 }
 
+export const ScriptIOMode = {
+  provide: 0n,
+  receive: 1n,
+}
+
 type ScriptMessageProvide = {
   mode: 'provide',
   data: bigint,
@@ -224,32 +235,45 @@ type ScriptMessageReceive = {
   mode: 'receive',
   target: number,
 }
-type ScriptMessage = ScriptMessageProvide | ScriptMessageReceive
-type Script = (provide: (val: bigint) => ScriptMessageProvide, receive: () => ScriptMessageReceive) => Generator<ScriptMessage, void, bigint>
+type ScriptTypeQuery = {
+  mode: 'type',
+  target: number,
+}
+type ScriptMessage = ScriptMessageProvide | ScriptMessageReceive | ScriptTypeQuery
+type Script<T = undefined> = (provide: (val: bigint) => ScriptMessageProvide, receive: () => ScriptMessageReceive, type: () => ScriptTypeQuery) => Generator<ScriptMessage, T, bigint>
 
-export const scriptManager = (machine: MachineState, script: Script) => {
+export const scriptManager = <T>(machine: MachineState, script: Script<T>, partial: boolean = false): T => {
   const provide = (val: bigint): ScriptMessageProvide => ({ mode: 'provide', data: val, target: 0 })
   const receive = (): ScriptMessageReceive => ({ mode: 'receive', target: 0 })
-  const scriptGen = script(provide, receive);
+  const type = (): ScriptTypeQuery => ({ mode: 'type', target: 0 })
+  const scriptGen = script(provide, receive, type);
   let lastMsg: IteratorResult<ScriptMessage> = scriptGen.next();
+  let ret: T | undefined = undefined;
   const mInterface: MachineInterface = {
     read: () => {
       // console.log(`Read`)
       if(lastMsg.done) throw new Error('Reached end of script early');
-      if(lastMsg.value.mode !== 'provide') throw new Error('Tried to read a value when script was not providing');
+      if(lastMsg.value.mode === 'receive') throw new Error('Tried to read a value when script was too');
+      if(lastMsg.value.mode === 'type') lastMsg = scriptGen.next(ScriptIOMode.provide);
+      if(lastMsg.value.mode === 'receive') throw new Error('Tried to read a value when script was too');
       const response = lastMsg.value.data
       lastMsg = scriptGen.next();
-      return [response, false];
+      if(lastMsg.done) ret = lastMsg.value;
+      return [response, !!(lastMsg.done && partial)];
     },
     write: data => {
       // console.log(`Write`)
       if(lastMsg.done) throw new Error('Reached end of script early');
-      if(lastMsg.value.mode !== 'receive') throw new Error('Tried to read a value when script was not receiving');
+      if(lastMsg.value.mode === 'provide') throw new Error('Tried to write a value when script was too');
+      if(lastMsg.value.mode === 'type') lastMsg = scriptGen.next(ScriptIOMode.receive);
+      if(lastMsg.value.mode === 'provide') throw new Error('Tried to write a value when script was too');
       lastMsg = scriptGen.next(data);
-      return [false];
+      if(lastMsg.done) ret = lastMsg.value;
+      return [!!(lastMsg.done && partial)];
     },
   }
   run(machine, mInterface);
+  return ret!;
 }
 
 type MultiScript = (

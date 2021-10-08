@@ -469,7 +469,7 @@ export const subtractSets = <T>(a: Set<T>, b: Set<T>, destructive: boolean = fal
   return base;
 }
 
-export const pickIntsFromString = (str: string) => str.match(/\d+/g)?.map(s => parseInt(s)) || [];
+export const pickIntsFromString = (str: string) => str.match(/-?\d+/g)?.map(s => parseInt(s)) || [];
 
 export class MultiMap<Ks extends any[], T> implements Map<Ks, T>{
   numKeys: number;
@@ -507,11 +507,11 @@ export class MultiMap<Ks extends any[], T> implements Map<Ks, T>{
   has(keys: Ks){
     if(keys.length !== this.numKeys) return false;
     let current = this.root;
-    for(let layer = 0; layer < this.numKeys; layer++){
+    for(let layer = 0; layer < this.numKeys - 1; layer++){
       if(!current.has(keys[layer])) return false;
       current = current.get(keys[layer]);
     }
-    return true;
+    return current.has(keys[this.numKeys - 1]);
   }
 
   *entries(): Generator<[Ks, T]> {
@@ -607,7 +607,7 @@ export class DefaultMultiMap<K extends any[], V> extends MultiMap<K, V>{
 export const memoizeMulti = <Ks extends any[], R>(fn: (...args: Ks) => R, defaults?: MultiMap<Ks, R>): ((...args: Ks) => R) => {
   const cache = defaults || new MultiMap<Ks, R>(fn.length);
   return (...args: Ks) => {
-    if(cache.has(args)) return cache.get(args) as R;
+    if(cache.has(args)) return cache.get(args)!;
     const result = fn(...args);
     cache.set(args, result);
     return result;
@@ -1012,4 +1012,13 @@ export const pairs = <R extends any[][]>(
   if(arrs.length === 1) return arrs[0].map(e => [e]) as any;
   const subPairs = pairs(...arrs.slice(1));
   return arrs[0].map(elem => subPairs.map(sub => [elem, ...sub])).flat(1) as any;
+}
+
+export const lcm = (x: number, y: number) => {
+  return (x * y) / gcd(x, y);
+}
+ 
+export const gcd = (x: number, y: number) => {
+  while(y) [x, y] = [y, x % y];
+  return x;
 }
