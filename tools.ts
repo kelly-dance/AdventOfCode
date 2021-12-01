@@ -820,9 +820,11 @@ export const third = <T>(arg: readonly [any, any, T, ...any]): T => arg[2];
 
 export const add = (x: number) => (y: number) => x + y;
 
-export class Vec2{
+export class Vec2 {
   x: number;
   y: number;
+
+  static ORIGIN = new Vec2(0);
 
   static SIDES = [
     new Vec2(0, 1),
@@ -877,6 +879,14 @@ export class Vec2{
 
   angle(): number {
     return Math.atan2(this.y, this.x);
+  }
+
+  toString(): `${number},${number}` {
+    return `${this.x},${this.y}`;
+  }
+
+  static read(s: string): Vec2 {
+    return new Vec2(...s.split(',').map(s => Number(s)) as [number, number]);
   }
 }
 
@@ -1021,4 +1031,28 @@ export const lcm = (x: number, y: number) => {
 export const gcd = (x: number, y: number) => {
   while(y) [x, y] = [y, x % y];
   return x;
+}
+
+export const mapFrom = <K, V>(pairs: [K, V][]): Map<K, V> => {
+  const map = new Map<K, V>();
+  for(const [k, v] of pairs) map.set(k, v);
+  return map;
+}
+
+export const invertMap = <K, V>(map: Map<K, V>): Map<V, K[]> => {
+  const inverted = new Map<V, K[]>();
+  for(const [key, value] of map.entries()) {
+    if(!inverted.has(value)) inverted.set(value, [key]);
+    else inverted.get(value)!.push(key);
+  }
+  return inverted;
+}
+
+export const mapMap = <K, V, L, N>(map: Map<K, V>, fn: (key: K, val: V) => [L, N]): Map<L, N> => {
+  const newMap = new Map<L, N>();
+  for(const [key, val] of map.entries()){
+    const [newKey, newVal] = fn(key, val);
+    newMap.set(newKey, newVal);
+  }
+  return newMap;
 }

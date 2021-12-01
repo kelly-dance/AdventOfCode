@@ -253,8 +253,9 @@ export const scriptManager = <T>(machine: MachineState, script: Script<T>, parti
     read: () => {
       // console.log(`Read`)
       if(lastMsg.done) throw new Error('Reached end of script early');
-      if(lastMsg.value.mode === 'receive') throw new Error('Tried to read a value when script was too');
-      if(lastMsg.value.mode === 'type') lastMsg = scriptGen.next(ScriptIOMode.provide);
+      while(lastMsg.value.mode === 'type'){
+        lastMsg = scriptGen.next(ScriptIOMode.provide);
+      }
       if(lastMsg.value.mode === 'receive') throw new Error('Tried to read a value when script was too');
       const response = lastMsg.value.data
       lastMsg = scriptGen.next();
@@ -264,8 +265,9 @@ export const scriptManager = <T>(machine: MachineState, script: Script<T>, parti
     write: data => {
       // console.log(`Write`)
       if(lastMsg.done) throw new Error('Reached end of script early');
-      if(lastMsg.value.mode === 'provide') throw new Error('Tried to write a value when script was too');
-      if(lastMsg.value.mode === 'type') lastMsg = scriptGen.next(ScriptIOMode.receive);
+      while(lastMsg.value.mode === 'type'){
+        lastMsg = scriptGen.next(ScriptIOMode.receive);
+      }
       if(lastMsg.value.mode === 'provide') throw new Error('Tried to write a value when script was too');
       lastMsg = scriptGen.next(data);
       if(lastMsg.done) ret = lastMsg.value;
