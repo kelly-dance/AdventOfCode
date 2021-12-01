@@ -1,4 +1,7 @@
 {
   "deno.enable": true,
-  "javascript.suggest.autoImports": true
+  "javascript.suggest.autoImports": true,
+  "deno.suggest.imports.hosts": {
+    "https://deno.land": true
+  }
 }

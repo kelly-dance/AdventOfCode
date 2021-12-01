@@ -1056,3 +1056,19 @@ export const mapMap = <K, V, L, N>(map: Map<K, V>, fn: (key: K, val: V) => [L, N
   }
   return newMap;
 }
+
+export const readAdventInput = async (): Promise<string> => {
+  const match = Deno.mainModule.match(/.*(\\|\/)(20\d\d)(\\|\/)(\d\d).(js|ts)/);
+  if(!match) throw new Error('Invalid script location or name. Cannot figure out the currnt year / day.')
+  const year = match[2];
+  const day = match[4];
+  const exists = [...Deno.readDirSync(`./inputs`)].some(f => f.name === `${day}.txt`);
+  if(exists) return readFile(`./inputs/${day}.txt`);
+  const req = await fetch(
+    `https://adventofcode.com/${year}/day/${parseInt(day)}/input`,
+    { headers: { Cookie: `session=${readFile('../session')}` } }
+  );
+  const inp = await req.text();
+  Deno.writeTextFileSync(`./inputs/${day}.txt`, inp);
+  return inp;
+}
