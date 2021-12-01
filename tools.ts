@@ -1057,7 +1057,7 @@ export const mapMap = <K, V, L, N>(map: Map<K, V>, fn: (key: K, val: V) => [L, N
   return newMap;
 }
 
-export const readAdventInput = async (): Promise<string> => {
+export const readAdvent = async (): Promise<string> => {
   const match = Deno.mainModule.match(/.*(\\|\/)(20\d\d)(\\|\/)(\d\d).(js|ts)/);
   if(!match) throw new Error('Invalid script location or name. Cannot figure out the currnt year / day.')
   const year = match[2];

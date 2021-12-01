@@ -142,52 +142,35 @@ const inp = readFile('./inputs/18.txt');
   starts.forEach(s => adjs.set(s.toString(), distsFrom(s)));
   
 
-  type Result = [number, Vec2, Set<string>];
-  const cache = new Map<`${number},${number},${string}`, Result>();
+  type Result = [number, Vec2[], Set<string>];
+  const cache = new Map<`${string},${string}`, Result>();
 
-  const searchFrom = (pos: Vec2, curKeys: Set<string>): Result => {
-    if(!adjs.has(pos.toString())) throw new Error('never');
+  const searchFrom = (poss: Vec2[], curKeys: Set<string>): Result => {
     const sorted = [...curKeys].sort().join('');
-    if(cache.has(`${pos.toString()},${sorted}`)) return cache.get(`${pos.toString()},${sorted}`)!;
-    const curAdj = adjs.get(pos.toString())!;
-    let best = [Infinity, Vec2.ORIGIN, new Set()] as Result;
-    for(const [ key, { dist, reqs, included } ] of curAdj){
-      console.log(key, dist, reqs, included)
-      if(curKeys.has(key) || !reqs.every(r => curKeys.has(r))) continue;
-      console.log(key, dist, reqs, included)
-      const newKeys = included.filter(k => !curKeys.has(k));
-      for(const k of newKeys) curKeys.add(k);
-      const [subDist, subEndPos, subKeys] = searchFrom(keys.get(key)!, curKeys);
-      const finDist = dist + subDist
-      if(finDist < best[0])  best = [finDist, subEndPos, subKeys];
-      for(const k of newKeys) curKeys.delete(k);
+    console.log(poss.map(v => v.toString()).join(' '), [...curKeys].join(''))
+    if(cache.has(`${poss.map(p => p.toString()).join(',')},${sorted}`)) return cache.get(`${poss.map(p => p.toString()).join(',')},${sorted}`)!;
+    let best = [Infinity, new Array(4).fill(Vec2.ORIGIN), new Set()] as Result;
+    for(let i = 0; i < poss.length; i++){
+      const pos = poss[i];
+      if(!adjs.has(pos.toString())) throw new Error('never');
+      const curAdj = adjs.get(pos.toString())!;
+      for(const [ key, { dist, reqs, included } ] of curAdj){
+        if(curKeys.has(key) || !reqs.every(r => curKeys.has(r))) continue;
+        const newKeys = included.filter(k => !curKeys.has(k));
+        for(const k of newKeys) curKeys.add(k);
+        const newPoss = poss.slice(0);
+        newPoss[i] = keys.get(key)!;
+        const [subDist, subEndPos, subKeys] = searchFrom(newPoss, curKeys);
+        const finDist = dist + subDist
+        if(finDist < best[0])  best = [finDist, subEndPos, subKeys];
+        for(const k of newKeys) curKeys.delete(k);
+      }
     }
-    if(best[0] === Infinity) return [0, pos, new Set(curKeys)];
-    cache.set(`${pos.toString()},${sorted}`, best);
+    if(best[0] === Infinity) return [0, poss, new Set(curKeys)];
+    cache.set(`${poss.map(p => p.toString()).join(',')},${sorted}`, best);
     return best;
   }
 
-  console.log(starts);
-  let best = Infinity;
-  let bestpath = '';
-  const statesQueue: [Vec2[], number, Set<string>][] = [[starts.slice(), 0, new Set()]];
-  while(statesQueue.length){
-    let [poss, totalDist, curKeys] = statesQueue.shift()!;
-    for(let i = 0; i < poss.length && curKeys.size < keys.size; i++){
-      const [traveled, newpos, upset] = searchFrom(poss[i], curKeys);
-      if(poss[i].eq(newpos)) continue;
-      const newDist = totalDist + traveled;
-      if(upset.size === keys.size) {
-        if(newDist < best) {
-          best = newDist;
-          bestpath = [...upset].join('');
-        }
-        continue;
-      }
-      const copy = poss.slice(0);
-      copy[i] = newpos;
-      statesQueue.push([copy, traveled, upset])
-    }
-  }
-  console.log(best, bestpath);
+  const [dist] = searchFrom(starts, new Set());
+  console.log(dist);
 })();
