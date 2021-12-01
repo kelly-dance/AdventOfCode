@@ -1,4 +1,4 @@
-import { readFile, Vec2, invertMap, mapMap, mapFrom } from '../tools.ts';
+import { readFile, Vec2, mapMap } from '../tools.ts';
 
 const inp = readFile('./inputs/18.txt');
 
@@ -51,22 +51,24 @@ const distsFrom = (loc: Vec2): Map<string, StepOption> => {
 const adjs = mapMap(keys, (_, value) => [value.toString(), distsFrom(value)]);
 adjs.set(start.toString(), distsFrom(start));
 
-let calls = 0;
-const searchFrom = (pos: Vec2, curKeys: Set<string>, prev: number): number => {
-  calls++;
-  if(calls % 1000 === 0) console.log(calls)
-  if(keys.size === curKeys.size) return prev;
+const cache = new Map<`${number},${number},${string}`, number>();
+
+const searchFrom = (pos: Vec2, curKeys: Set<string>): number => {
+  if(keys.size === curKeys.size) return 0;
   if(!adjs.has(pos.toString())) throw new Error('never');
+  const sorted = [...curKeys].sort().join('');
+  if(cache.has(`${pos.toString()},${sorted}`)) return cache.get(`${pos.toString()},${sorted}`)!;
   const curAdj = adjs.get(pos.toString())!;
-  const opts = [...curAdj.entries()].filter(([k, v]) => !curKeys.has(k) && v.reqs.every(r => curKeys.has(r)));
   let best = Infinity;
-  for(const [key, { dist} ] of opts){
+  for(const [ key, { dist, reqs } ] of curAdj){
+    if(curKeys.has(key) || !reqs.every(r => curKeys.has(r))) continue;
     curKeys.add(key);
-    const finDist = searchFrom(keys.get(key)!, curKeys, prev + dist);
+    const finDist = dist + searchFrom(keys.get(key)!, curKeys);
     if(finDist < best) best = finDist;
     curKeys.delete(key);
   }
+  cache.set(`${pos.toString()},${sorted}`, best);
   return best;
 }
 
-console.log(searchFrom(start, new Set(), 0));
+console.log(searchFrom(start, new Set()));
