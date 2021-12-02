@@ -820,6 +820,7 @@ export const third = <T>(arg: readonly [any, any, T, ...any]): T => arg[2];
 
 export const add = (x: number) => (y: number) => x + y;
 
+export type Vec2Str = ReturnType<Vec2['toString']>
 export class Vec2 {
   x: number;
   y: number;
@@ -869,6 +870,10 @@ export class Vec2 {
     return Math.abs(this.x) + Math.abs(this.y)
   }
 
+  minDist(otr: Vec2){
+    return Math.min(Math.abs(this.x - otr.x), Math.abs(this.y - otr.y))
+  }
+
   eq(otr: Vec2, EPSILON = 0.00001){
     return Math.abs(this.x - otr.x) < EPSILON && Math.abs(this.y - otr.y) < EPSILON;
   }
@@ -890,6 +895,7 @@ export class Vec2 {
   }
 }
 
+export type Vec3Str = ReturnType<Vec3['toString']>
 export class Vec3{
   x: number;
   y: number;
@@ -922,7 +928,11 @@ export class Vec3{
   }
 
   manhattenLen(){
-    return Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z)
+    return Math.abs(this.x), Math.abs(this.y) + Math.abs(this.z)
+  }
+
+  minDist(otr: Vec3){
+    return Math.min(Math.abs(this.x - otr.x), Math.abs(this.y - otr.y), Math.abs(this.z - otr.z))
   }
 
   eq(otr: Vec3, EPSILON = 0.00001){
@@ -931,6 +941,14 @@ export class Vec3{
 
   normalized(): Vec3 {
     return this.div(this.len())
+  }
+
+  toString(): `${number},${number},${number}` {
+    return `${this.x},${this.y},${this.z}`;
+  }
+
+  static read(s: string): Vec3 {
+    return new Vec3(...s.split(',').map(s => Number(s)) as [number, number, number]);
   }
 }
 

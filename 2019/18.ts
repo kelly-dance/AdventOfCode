@@ -81,7 +81,7 @@ const inp = readFile('./inputs/18.txt');
 
   const [dist] = searchFrom(start, new Set());
   console.log(dist);
-});
+})();
 
 (() => { // Part 2
   let center: Vec2 = Vec2.ORIGIN;
