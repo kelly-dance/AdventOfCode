@@ -1086,7 +1086,8 @@ export const readAdvent = async (): Promise<string> => {
     `https://adventofcode.com/${year}/day/${parseInt(day)}/input`,
     { headers: { Cookie: `session=${readFile('../session')}` } }
   );
-  const inp = await req.text();
+  let inp = await req.text();
+  inp = inp.split('\n').filter(l => l.length).join('\n')
   Deno.writeTextFileSync(`./inputs/${day}.txt`, inp);
   return inp;
 }
@@ -1101,3 +1102,7 @@ export const printChar = (()=>{
     } else acc += char;
   }
 })();
+
+export const transpose = <T>(arr: T[][]): T[][] => {
+  return range(arr[0].length).map(j => range(arr.length).map(i => arr[i][j]));
+}
