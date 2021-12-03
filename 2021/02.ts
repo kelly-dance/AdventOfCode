@@ -45,5 +45,3 @@ const input = (await t.readAdvent()).split('\n').map(l => {
   }
   console.log(depth * hor)
 })();
-
-

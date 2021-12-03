@@ -1090,3 +1090,14 @@ export const readAdvent = async (): Promise<string> => {
   Deno.writeTextFileSync(`./inputs/${day}.txt`, inp);
   return inp;
 }
+
+export const printChar = (()=>{
+  let acc = '';
+  return (char: string) => {
+    if(char.length > 1) throw new Error('Use this only with single char strings (or 0)');
+    if(char === '\n') {
+      console.log(acc);
+      acc = '';
+    } else acc += char;
+  }
+})();
