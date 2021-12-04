@@ -31,6 +31,15 @@ ABCDEFGHI
 
 AND(
   OR(
+    !B && !E
+    !C && !F
+    !A
+  )
+  D
+)
+
+AND(
+  OR(
     !((B || E) && (C || F))
     !A
   )
@@ -48,8 +57,6 @@ NOT J J
 NOT A T
 OR T J
 AND D J
-NOT H T
-AND H T
 RUN
 `.split('\n').filter(Boolean).map(l => `${l}\n`).join('');
 

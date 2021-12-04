@@ -19,7 +19,7 @@ let oxy = toDec(range(inp[0].length).reduce((acc, b) => {
 let co2 = toDec(range(inp[0].length).reduce((acc, b) => {
   if(acc.length === 1) return acc;
   const count = countMatches(acc, e => e[b] === 1);
-  return acc.filter(e => !!e[b] === (count < acc.length / 2));
+  return acc.filter(e => !!e[b] !== (count >= acc.length / 2));
 }, inp)[0]);
 
 console.log(oxy * co2)
