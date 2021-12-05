@@ -1075,21 +1075,25 @@ export const mapMap = <K, V, L, N>(map: Map<K, V>, fn: (key: K, val: V) => [L, N
   return newMap;
 }
 
+const warningText = `Please don't repeatedly request this endpoint before it unlocks! The calendar countdown is synchronized with the server time; the link will be enabled on the calendar the instant this puzzle becomes available.`;
 export const readAdvent = async (): Promise<string> => {
   const match = Deno.mainModule.match(/.*(\\|\/)(20\d\d)(\\|\/)(\d\d).(js|ts)/);
   if(!match) throw new Error('Invalid script location or name. Cannot figure out the currnt year / day.')
   const year = match[2];
   const day = match[4];
   const exists = [...Deno.readDirSync(`./inputs`)].some(f => f.name === `${day}.txt`);
-  if(exists) return readFile(`./inputs/${day}.txt`);
+  if(exists) {
+    const text = readFile(`./inputs/${day}.txt`);
+    if(!text.includes(warningText)) return text;
+  }
   const req = await fetch(
     `https://adventofcode.com/${year}/day/${parseInt(day)}/input`,
     { headers: { Cookie: `session=${readFile('../session')}` } }
   );
-  let inp = await req.text();
-  inp = inp.split('\n').filter(l => l.length).join('\n')
-  Deno.writeTextFileSync(`./inputs/${day}.txt`, inp);
-  return inp;
+  let text = await req.text();
+  if(text.endsWith('\n')) text = text.substring(0, text.length - 1);
+  Deno.writeTextFileSync(`./inputs/${day}.txt`, text);
+  return text;
 }
 
 export const printChar = (()=>{
