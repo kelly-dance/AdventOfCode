@@ -2,29 +2,21 @@ import { pickIntsFromString, readAdvent } from '../tools.ts';
 
 const inp = (await readAdvent()).split('\n').map(pickIntsFromString);
 
-const pts = new Set();
+const covered = new Set();
 const overlaps = new Set();
 
-const p1 = inp.filter(([a, b, x, y]) => a === x || b === y);
-for(const [a, b, x, y] of p1){
-  for(let i = Math.min(a,x); i <= Math.max(a,x); i++){
-    for(let j = Math.min(b,y); j <= Math.max(b,y); j++){
-      const s = `${i},${j}`;
-      if(pts.has(s)) overlaps.add(s);
-      pts.add(s);
+const processPoints = pts => {
+  for(const [a, b, x, y] of pts){
+    for(let i = 0; i <= Math.max(Math.abs(a-x), Math.abs(b-y)); i++){
+      const s = `${a + i * Math.sign(x - a)},${b + i * Math.sign(y - b)}`;
+      if(covered.has(s)) overlaps.add(s);
+      covered.add(s);
     }
   }
 }
+
+processPoints(inp.filter(([a, b, x, y]) => a === x || b === y));
 console.log(overlaps.size);
 
-const p2 = inp.filter(([a, b, x, y]) => !(a === x || b === y))
-for(const [a, b, x, y] of p2){
-  const dx = x > a ? 1 : -1;
-  const dy = y > b ? 1 : -1;
-  for(let i = 0; i <= Math.abs(a-x); i++){
-    const s = `${a + dx * i},${ b + dy * i}`;
-    if(pts.has(s)) overlaps.add(s);
-    pts.add(s);
-  }
-}
+processPoints(inp.filter(([a, b, x, y]) => a !== x && b !== y));
 console.log(overlaps.size);
