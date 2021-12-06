@@ -1,4 +1,4 @@
-import { DefaultMap, digitsOfBigInt, bigIntFromDigits, range } from '../tools.ts';
+import { DefaultMap, digitsOfBigInt, bigIntFromDigits } from '../tools.ts';
 
 export class MachineMemory extends DefaultMap<bigint, bigint>{
   constructor(){
@@ -143,34 +143,8 @@ export const cloneState = (state: MachineState) => {
   return { ...state, memory };
 }
 
-const opNameMap = new Map<bigint, string>();
-opNameMap.set(1n, 'ADD');
-opNameMap.set(2n, 'MULT');
-opNameMap.set(3n, 'READ');
-opNameMap.set(4n, 'WRITE');
-opNameMap.set(5n, 'JTRUE');
-opNameMap.set(6n, 'JFALSE');
-opNameMap.set(7n, 'LT');
-opNameMap.set(8n, 'EQ');
-opNameMap.set(9n, 'REBASE');
-opNameMap.set(99n, 'EXIT');
-const opModeMap = new Map<bigint, string>();
-opModeMap.set(0n, 'PTR');
-opModeMap.set(1n, 'ABS');
-opModeMap.set(2n, 'SP');
-const opArgMap = new Map<bigint, number>();
-opArgMap.set(1n, 3);
-opArgMap.set(2n, 3);
-opArgMap.set(3n, 1);
-opArgMap.set(4n, 1);
-opArgMap.set(5n, 2);
-opArgMap.set(6n, 2);
-opArgMap.set(7n, 3);
-opArgMap.set(8n, 3);
-opArgMap.set(9n, 1);
-opArgMap.set(99n,0);
 
-export const run = (state: MachineState, mInterface: MachineInterface, debug = false) => {
+export const run = (state: MachineState, mInterface: MachineInterface) => {
   if(state.complete) throw new Error('Trying to boot a machine that is already complete?');
   if(state.running) throw new Error('Trying to boot a machine that is already running?');
   state.running = true;
@@ -196,27 +170,16 @@ export const run = (state: MachineState, mInterface: MachineInterface, debug = f
         },
         write: value => {
           if(mode === 0n) {
-            if(debug) console.log(`Writing ${value} to location ${accessor.readRaw()}`)
             state.memory.set(accessor.readRaw(), value);
           }
           else if(mode === 1n) throw new Error('Cannot write in immediate mode');
-          else if(mode === 2n) {
-            if(debug) console.log(`Writing ${value} to location ${state.relBase + accessor.readRaw()} (rel${accessor.readRaw()})`)
-            state.memory.set(state.relBase + accessor.readRaw(), value);
-          }
+          else if(mode === 2n) state.memory.set(state.relBase + accessor.readRaw(), value);
           else throw new Error('Unsupported parameter mode')
         }
       }
       return accessor;
     })
-    if(debug) {
-      const opDesc = `${opNameMap.get(opcode)}(${range(opArgMap.get(opcode)!).map(i => `${opModeMap.get(modes[i])} ${state.memory.get(state.pointer + 1n + BigInt(i))}`).join(', ')})`
-      console.log(`Loc: ${state.pointer}, Base: ${state.relBase}, Executing: ${opDesc} `)
-    }
     operators.get(opcode)!(state, argAccesssors, mInterface);
-    if(debug) {
-      // console.log([...state.memory.keys()].sort((a,b)=>Number(a-b)).map(i => `${i}:${state.memory.get(i)}`).join(', '))
-    }
   }
   return state;
 }
@@ -253,9 +216,7 @@ export const scriptManager = <T>(machine: MachineState, script: Script<T>, parti
     read: () => {
       // console.log(`Read`)
       if(lastMsg.done) throw new Error('Reached end of script early');
-      while(lastMsg.value.mode === 'type'){
-        lastMsg = scriptGen.next(ScriptIOMode.provide);
-      }
+      while(lastMsg.value.mode === 'type') lastMsg = scriptGen.next(ScriptIOMode.provide);
       if(lastMsg.value.mode === 'receive') throw new Error('Tried to read a value when script was too');
       const response = lastMsg.value.data
       lastMsg = scriptGen.next();
@@ -265,9 +226,7 @@ export const scriptManager = <T>(machine: MachineState, script: Script<T>, parti
     write: data => {
       // console.log(`Write`)
       if(lastMsg.done) throw new Error('Reached end of script early');
-      while(lastMsg.value.mode === 'type'){
-        lastMsg = scriptGen.next(ScriptIOMode.receive);
-      }
+      while(lastMsg.value.mode === 'type') lastMsg = scriptGen.next(ScriptIOMode.receive);
       if(lastMsg.value.mode === 'provide') throw new Error('Tried to write a value when script was too');
       lastMsg = scriptGen.next(data);
       if(lastMsg.done) ret = lastMsg.value;

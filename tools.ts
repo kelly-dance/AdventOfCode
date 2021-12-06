@@ -1110,3 +1110,10 @@ export const printChar = (()=>{
 export const transpose = <T>(arr: T[][]): T[][] => {
   return range(arr[0].length).map(j => range(arr.length).map(i => arr[i][j]));
 }
+
+export const irange = (start: number, end: number, step: number = 1): number[] => {
+  const size = Math.abs(end - start) / step;
+  if(size % 1 !== 0) throw new Error('Must be a whole number of steps from start to end!');
+  const dir = Math.sign(end - start);
+  return range(size + 1).map(i => start + step * dir * i);
+}
