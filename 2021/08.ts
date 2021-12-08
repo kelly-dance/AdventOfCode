@@ -13,7 +13,7 @@ console.log(sum(inp.map(l => countMatches(l[1], v => [2,3,4,7].indexOf(v.size) !
 
 // Part 2
 const resolved = inp.map(([nums, value]) => {
-  const mappings = new Map();
+  const mappings = new Map<string, number>();
 
   const one = nums.find(s => s.size === 2)!;
   mappings.set(setString(one), 1);
@@ -45,7 +45,7 @@ const resolved = inp.map(([nums, value]) => {
   const two = nums.find(s => !mappings.has(setString(s)))!;
   mappings.set(setString(two), 2);
 
-  return numberFromDigits(value.map(s => mappings.get([...s].sort().join(''))).reverse());
+  return numberFromDigits(value.map(s => mappings.get(setString(s))!).reverse());
 })
 
 console.log(sum(resolved));
