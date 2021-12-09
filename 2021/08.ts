@@ -1,4 +1,4 @@
-import { countMatches,  numberFromDigits, readAdvent, sum } from '../tools.ts';
+import { countMatches, isSubset, numberFromDigits, readAdvent, sum } from '../tools.ts';
 
 const setString = (s: Set<string>) => [...s].sort().join('');
 
@@ -27,19 +27,19 @@ const resolved = inp.map(([nums, value]) => {
   const eight = nums.find(s => s.size === 7)!;
   mappings.set(setString(eight), 8);
 
-  const six = nums.find(s => s.size === 6 && ![...one].every(p => s.has(p)))!;
+  const six = nums.find(s => s.size === 6 && !isSubset(one, s))!;
   mappings.set(setString(six) , 6);
 
-  const nine = nums.find(s => s.size === 6 && [...four].every(p => s.has(p)))!;
+  const nine = nums.find(s => s.size === 6 && isSubset(four, s))!;
   mappings.set(setString(nine), 9);
 
   const zero = nums.find(s => s.size === 6 && s !== six && s !== nine)!;
   mappings.set(setString(zero), 0);
 
-  const five = nums.find(s => s.size === 5 && [...s].every(p => six.has(p)))!;
+  const five = nums.find(s => s.size === 5 && isSubset(s, six))!;
   mappings.set(setString(five), 5);
 
-  const three = nums.find(s => s !== five && s.size === 5 && [...s].every(p => nine.has(p)))!;
+  const three = nums.find(s => s !== five && s.size === 5 && isSubset(s, nine))!;
   mappings.set(setString(three), 3);
 
   const two = nums.find(s => !mappings.has(setString(s)))!;

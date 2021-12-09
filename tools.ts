@@ -469,6 +469,12 @@ export const subtractSets = <T>(a: Set<T>, b: Set<T>, destructive: boolean = fal
   return base;
 }
 
+/** is `a` a subset of `b` */
+export const isSubset = (a: Set<any>, b: Set<any>): boolean => {
+  for(const elem of a) if(!b.has(elem)) return false;
+  return true;
+}
+
 export const pickIntsFromString = (str: string) => str.match(/-?\d+/g)?.map(s => parseInt(s)) || [];
 
 export class MultiMap<Ks extends any[], T> implements Map<Ks, T>{
