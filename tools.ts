@@ -84,6 +84,19 @@ export function sudokuChoices(arr: number[][], x: number, y: number){
 export const sum = (nums: number[]) => nums.reduce((a, n) => a + n, 0);
 export const sumBigInt = (nums: bigint[]) => nums.reduce((a, n) => a + n, 0n);
 
+export const sumVec2 = (nums: Vec2[]) => nums.reduce((a, n) => {
+  a.x += n.x;
+  a.y += n.y;
+  return a;
+}, new Vec2(0));
+
+export const sumVec3 = (nums: Vec3[]) => nums.reduce((a, n) => {
+  a.x += n.x;
+  a.y += n.y;
+  a.z += n.z;
+  return a;
+}, new Vec3(0));
+
 export const product = (nums: number[]) => nums.reduce((a, n) => a * n, 1);
 export const productBigInt = (nums: bigint[]) => nums.reduce((a, n) => a * n, 1n);
 
@@ -683,8 +696,8 @@ export const concat = <T>(arrs: T[][]): T[] => arrs.reduce((acc, cur) => [...acc
 export const deepCopyArray = <T extends any[]>(arr: T): T => arr.map(elem => Array.isArray(elem) ? deepCopyArray(elem) : elem) as T;
 
 export type Sizes = 1 | 2 | 3 | 4 | 5;
-export type MultiDimArray<D extends Sizes, T> = [never, T[], T[][], T[][][], T[][][][], T[][][][][]][D];
-export type TupleSizes<D extends Sizes, T> = [never, [T], [T,T], [T,T,T], [T,T,T,T], [T,T,T,T,T]][D];
+export type MultiDimArray<D extends Sizes, T> = [T, T[], T[][], T[][][], T[][][][], T[][][][][]][D];
+export type TupleSizes<D extends Sizes, T> = [[], [T], [T,T], [T,T,T], [T,T,T,T], [T,T,T,T,T]][D];
 
 export class Grid<D extends Sizes, T>{
   private internal: MultiDimArray<D, T>;
@@ -899,6 +912,10 @@ export class Vec2 {
   static read(s: string): Vec2 {
     return new Vec2(...s.split(',').map(s => Number(s)) as [number, number]);
   }
+  
+  get<T>(source: T[][]): T | undefined {
+    return source[this.x]?.[this.y];
+  }
 }
 
 export type Vec3Str = ReturnType<Vec3['toString']>
@@ -906,6 +923,8 @@ export class Vec3{
   x: number;
   y: number;
   z: number;
+
+  static ORIGIN = new Vec3(0);
 
   constructor(x: number, y?: number, z?: number){
     this.x = x;
@@ -955,6 +974,10 @@ export class Vec3{
 
   static read(s: string): Vec3 {
     return new Vec3(...s.split(',').map(s => Number(s)) as [number, number, number]);
+  }
+
+  get<T>(source: T[][][]): T | undefined {
+    return source[this.x]?.[this.y]?.[this.z];
   }
 }
 
@@ -1122,4 +1145,80 @@ export const irange = (start: number, end: number, step: number = 1): number[] =
   if(size % 1 !== 0) throw new Error('Must be a whole number of steps from start to end!');
   const dir = Math.sign(end - start);
   return range(size + 1).map(i => start + step * dir * i);
+}
+
+export class OMap<K, V> implements Map<K, V> {
+  public internalMap: Map<string, [K, V]>;
+  [Symbol.toStringTag]: string;
+
+  constructor(public resolver: (k: K) => string){
+    this.internalMap = new Map();
+  }
+
+
+  clear(): void {
+    this.internalMap.clear();
+  }
+
+  delete(key: K): boolean {
+    return this.internalMap.delete(this.resolver(key));
+  }
+
+  *entries(): IterableIterator<[K, V]> {
+    for(const [resolved, pair] of this.internalMap.entries()){
+      yield pair;
+    }
+  }
+
+  forEach(cb: (val: V, key: K, map: Map<K, V>) => any, thisArg?: any): void {
+    for(const [res, [key, val]] of this.internalMap.entries()){
+      cb.call(thisArg, val, key, this as any as Map<K, V>); // loooool
+    }
+  }
+
+  get(key: K): V | undefined {
+    return this.internalMap.get(this.resolver(key))?.[1];
+  }
+
+  has(key: K): boolean {
+    return this.internalMap.has(this.resolver(key));
+  }
+
+  *keys(): IterableIterator<K> {
+    for(const [res, [key, val]] of this.internalMap.entries()){
+      yield key;
+    }
+  }
+
+  set(key: K, val: V): this {
+    this.internalMap.set(this.resolver(key), [key, val]);
+    return this;
+  }
+
+  get size(){
+    return this.internalMap.size;
+  }
+
+  *values(): IterableIterator<V> {
+    for(const [res, [key, val]] of this.internalMap.entries()){
+      yield val;
+    }
+  }
+
+  [Symbol.iterator](): IterableIterator<[K, V]> {
+    return this.entries();
+  }
+}
+
+export function* multiLoop<S extends Sizes, T extends any>(depth: S, arr: MultiDimArray<S, T>): Generator<[T, ...TupleSizes<S, number>]> {
+  if(depth === 1){
+    for(let i = 0; i < arr.length; i++)
+      yield [arr[i], i] as any;
+  } else {
+    for(let i = 0; i < arr.length; i++){
+      for(const sub of multiLoop(depth - 1 as Sizes, arr[i] as any)){
+        yield [...sub, i] as any;
+      }
+    }
+  }
 }
