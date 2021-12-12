@@ -562,10 +562,6 @@ export class MultiMap<Ks extends any[], T> implements Map<Ks, T>{
     this.size = 0;
   }
 
-  /**
-   * @TODO
-   * this can possibily leave empty maps that store no data
-   */
   delete(keys: Ks) {
     if(keys.length !== this.numKeys) return false;
     let current = this.root;
@@ -1220,5 +1216,87 @@ export function* multiLoop<S extends Sizes, T extends any>(depth: S, arr: MultiD
         yield [...sub, i] as any;
       }
     }
+  }
+}
+
+export type Node<T> = {
+  value: T,
+  left?: Node<T>,
+  right?: Node<T>,
+  parent?: Node<T>,
+}
+export class SortedSet<T>{
+  public root: Node<T> | undefined;
+
+  constructor(public comparator: (a: T, b: T) => number) {}
+
+  public add(value: T){
+    if(this.root === undefined) {
+      this.root = { value }
+      return;
+    }
+    const helper = (node: Node<T>) => {
+      const comp = this.comparator(value, node.value);
+      if(comp === 0) return;
+      if(comp < 0){
+        if(node.left === undefined) node.left = { value, parent: node };
+        else helper(node.left);
+      }else{
+        if(node.right === undefined) node.right = { value, parent: node };
+        else helper(node.right);
+      }
+    }
+    helper(this.root);
+  }
+
+  public remove(value: T){
+    if(this.root === undefined) return;
+    const helper = (node?: Node<T>) => {
+      if(!node) return;
+      const comp = this.comparator(value, node.value);
+      if(comp === 0){
+        if(!node.left && !node.right) { // no children
+          this.setParentsChild(node, undefined)
+        } else if(!!node.left !== !!node.right) { // 1 child
+          if(node.left) this.setParentsChild(node, node.left);
+          else this.setParentsChild(node, node.right);
+        } else { // both children
+          let preorder = node.left!;
+          while(preorder.left || preorder.right) preorder = preorder.right ?? preorder.left!;
+          this.setParentsChild(preorder, undefined);
+          node.value = preorder.value;
+        }
+      }else if(comp < 0) helper(node.left);
+      else helper(node.right);
+    }
+    helper(this.root);
+  }
+
+  public reduce<R>(reducer: (acc: R, val: T) => R, init: R): R {
+    if(this.root === undefined) return init;
+    const reduceWith = (acc: R, node: Node<T>): R => {
+      if(node.left) acc = reduceWith(acc, node.left);
+      acc = reducer(acc, node.value);
+      if(node.right) acc = reduceWith(acc, node.right);
+      return acc;
+    }
+    return reduceWith(init, this.root);
+  }
+
+  public has(value: T){
+    const helper = (node?: Node<T>): boolean => {
+      if(!node) return false;
+      const comp = this.comparator(value, node.value);
+      if(comp === 0) return true;
+      if(comp < 0) return helper(node.left);
+      else return helper(node.right);
+    }
+    return helper(this.root);
+  }
+
+  private setParentsChild(node: Node<T>, to?: Node<T>){
+    if(node === this.root) this.root = to;
+    else if(node.parent!.left === node) node.parent!.left = to;
+    else node.parent!.right = to;
   }
 }
