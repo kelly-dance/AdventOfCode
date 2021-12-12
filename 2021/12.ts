@@ -31,11 +31,9 @@ const searchFrom = (current: string, visited: SortedSet<string>, part2: boolean)
 };
 
 let start = performance.now();
-const p1set = new SortedSet<string>((a,b) => a === b ? 0 : a < b ? -1 : 1);
-p1set.add('start');
-console.log(searchFrom('start', p1set, false));
-const p2set = new SortedSet<string>((a,b) => a === b ? 0 : a < b ? -1 : 1);
-p2set.add('start');
-console.log(searchFrom('start', p2set, true));
+const set = new SortedSet<string>((a,b) => a === b ? 0 : a < b ? -1 : 1);
+set.add('start');
+console.log(searchFrom('start', set, false)); // part 1
+console.log(searchFrom('start', set, true)); // part 2
 console.log(performance.now() - start, 'ms');
 
