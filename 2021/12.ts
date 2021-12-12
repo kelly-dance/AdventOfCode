@@ -1,49 +1,59 @@
-import { DefaultMap, readAdvent } from '../tools.ts';
+import { readAdvent } from '../tools.ts';
 
 const inp = (await readAdvent()).split('\n').map(s => s.split('-'));
 
-const isLowerMap = new Map<number, boolean>();
 const labelToBin = new Map<string, number>();
 for(const pair of inp){
   for(const label of pair){
     if(labelToBin.has(label)) continue;
-    const value = 1 << labelToBin.size;
-    labelToBin.set(label, value);
-    isLowerMap.set(value, label === label.toLowerCase());
+    labelToBin.set(label, labelToBin.size);
   }
 }
 
-const cons = new DefaultMap<number, number[]>(() => []);
-for(const [t,f] of inp){
-  cons.get(labelToBin.get(t)!).push(labelToBin.get(f)!);
-  cons.get(labelToBin.get(f)!).push(labelToBin.get(t)!);
+const isLowerMap = new Array(labelToBin.size);
+for(const [key, value] of labelToBin) isLowerMap[value] = key === key.toLowerCase();
+
+const cons: number[][] = new Array(labelToBin.size);
+for(const pair of inp){
+  const [t, f] = pair.map(label => labelToBin.get(label)!);
+  if(cons[t] === undefined) cons[t] = [f];
+  else cons[t].push(f);
+  if(cons[f] === undefined) cons[f] = [t];
+  else cons[f].push(t);
 }
 
 let start = labelToBin.get('start')!;
 let end = labelToBin.get('end')!;
-const cache = new Map<number, number>()
+let cache: (number | undefined)[] = new Array(1 << (Math.ceil(Math.log2(labelToBin.size)) + labelToBin.size));
 const searchFrom = (current: number, visited: number, part2: boolean): number => {
   if(current === end) return 1;
-  let key = (visited << 1) | (current << labelToBin.size) | Number(part2);
-  if(cache.has(key)) return cache.get(key)!;
+  let key = (current << labelToBin.size) | (visited << 1) | Number(part2);
+  if(cache[key] !== undefined) return cache[key]!;
   let paths = 0;
-  for(const path of cons.get(current)){
+  for(const neighbor of cons[current]){ // for each connected node
     let notDoubled = part2;
-    if(visited & path){
-      if(part2 && path !== start) notDoubled = false;
-      else continue;
+    if(visited & (1 << neighbor)){ // checks if neighbor is in visited
+      if(part2 && neighbor !== start) notDoubled = false; // if double is not used, use it
+      else continue; // otherwise we cannot go to this node
     }
-    const changeSet = isLowerMap.get(path)! && !(notDoubled !== part2);
-    if(changeSet) visited |= path;
-    paths += searchFrom(path, visited, notDoubled);
-    if(changeSet) visited &= ~path;
+    paths += searchFrom(
+      neighbor,
+      isLowerMap[neighbor]! ? visited | (1 << neighbor) : visited, // add next node to visited if its lower
+      notDoubled,
+    );
   }
-  cache.set(key, paths);
+  cache[key] = paths;
   return paths;
 };
 
-let startTime = performance.now();
-console.log(searchFrom(start, start, false)); // part 1
-console.log(searchFrom(start, start, true)); // part 2
-console.log(performance.now() - startTime, 'ms');
+let totalTime = 0;
+for(let i = 0; i < 1e4; i++){
+  cache = new Array(1 << (Math.ceil(Math.log2(labelToBin.size)) + labelToBin.size));
+  let startTime = performance.now();
+  searchFrom(start, 1 << start, false); // part 1
+  searchFrom(start, 1 << start, true); // part 2
+  totalTime += performance.now() - startTime;
+}
+console.log(totalTime / 1e4, 'ms');
+
 
