@@ -21,10 +21,10 @@ const searchFrom = (current: string, visited: SortedSet<string>, part2: boolean)
       if(part2 && path !== 'start') notDoubled = false;
       else continue;
     }
-    const isLower = path === path.toLowerCase();
-    if(isLower) visited.add(path);
+    const changeSet = path === path.toLowerCase() && !(notDoubled !== part2);
+    if(changeSet) visited.add(path);
     paths += searchFrom(path, visited, notDoubled);
-    if(isLower && !(notDoubled !== part2)) visited.remove(path);
+    if(changeSet) visited.remove(path);
   }
   cache.set(key, paths);
   return paths;
