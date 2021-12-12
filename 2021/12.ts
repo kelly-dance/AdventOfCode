@@ -24,7 +24,7 @@ for(const pair of inp){
 
 let start = labelToBin.get('start')!;
 let end = labelToBin.get('end')!;
-let cache: (number | undefined)[] = new Array(1 << (Math.ceil(Math.log2(labelToBin.size)) + labelToBin.size));
+let cache: (number | undefined)[]; // initialized down in the testing loop
 const searchFrom = (current: number, visited: number, part2: boolean): number => {
   if(current === end) return 1;
   let key = (current << labelToBin.size) | (visited << 1) | Number(part2);
