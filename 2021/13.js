@@ -11,7 +11,7 @@ const fold = (pts, w, n) => {
   const newPts = new Map();
   if(w === 'x'){
     for(const [x, y] of pts.values()){
-      if(x < n) newPts.set(`${x},${y}`,[x, y]);
+      if(x < n) newPts.set(`${x},${y}`, [x, y]);
       else {
         const nx = 2 * n - x;
         newPts.set(`${nx},${y}`, [nx, y]);
@@ -44,7 +44,7 @@ for(const [w, n] of folds.slice(1)){
 
 for(let i = 0; i < 6; i++){
   for(let j = 0; j < 39; j++){
-    printChar(pts.has(`${j},${i}`) ? '#' : ',');
+    printChar(pts.has(`${j},${i}`) ? '#' : ' ');
   }
   printChar('\n');
 }

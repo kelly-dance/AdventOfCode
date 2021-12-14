@@ -1,6 +1,6 @@
-import * as t from '../tools.ts';
+import { readAdvent } from '../tools.ts';
 
-const input = (await t.readAdvent()).split('\n').map(l => {
+const input = (await readAdvent()).split('\n').map(l => {
   const [inst, dists] = l.split(' ');
   const dist = parseInt(dists);
   return [inst, dist] as [string, number];
