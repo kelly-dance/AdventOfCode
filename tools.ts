@@ -340,8 +340,6 @@ export const multiSampleCombos = function*<T extends any[]>(
   }
 }
 
-export type FutureGen<T> = () => Generator<T>;
-
 export const naturalNumGenerator = function*(){
   for(let i = 1; true; i++) yield i;
 }
@@ -365,24 +363,18 @@ export const takeAll = <T>(itr: Iterator<T>) => {
   return items;
 }
 
-export const mapGenerator = <T, R>(
-  genFn: (FutureGen<T>
-), fn: ((value: T) => R)): FutureGen<R> => {
-  return function*(){
-    const gen = genFn();
-    while(true){
-      const value = gen.next();
-      if(value.done) return;
-      yield fn(value.value)
-    }
+export function* mapGenerator<T, R>(gen: Generator<T>, fn: ((value: T) => R)): Generator<R> {
+  while(true){
+    const value = gen.next();
+    if(value.done) return;
+    yield fn(value.value)
   }
 }
 
-export const zipGenerators = <T extends (FutureGen<any>)[]>(
-  ...genFns: T
-): (FutureGen<{ [K in keyof T]: T[K] extends (FutureGen<infer S>) ? S : T[K] }>) => {
+export function* zipGenerators<T extends Generator<any>[]>(
+  ...gens: T
+): (Generator<{ [K in keyof T]: T[K] extends (Generator<infer S>) ? S : T[K] }>){
   return function*(){
-    const gens = genFns.map(fn => fn());
     while(true){
       const values = gens.map(gen => gen.next());
       if(values.some(value => value.done)) return;
@@ -402,33 +394,29 @@ export function* zipIterables<T extends Iterable<any>[]>(
   }
 }
 
-export const filterGenerator = <T>(genFn: FutureGen<T>, pred: ((value: T) => boolean)): FutureGen<T> => {
-  return function*(){
-    const gen = genFn();
-    while(true){
-      const value = gen.next();
-      if(value.done) return;
-      if(!pred(value.value)) continue;
-      yield value.value
-    }
+export function* filterGenerator<T>(gen: Generator<T>, pred: ((value: T) => boolean)): Generator<T> {
+  while(true){
+    const value = gen.next();
+    if(value.done) return;
+    if(!pred(value.value)) continue;
+    yield value.value
   }
 }
 
-export const prependConstants = <T>(genFn: FutureGen<T>, values: T[]): FutureGen<T> => {
-  return function*(){
+export function* prependConstants<T>(gen: Generator<T>, values: T[]): Generator<T> {
     for(const value of values) yield value;
-    const yieldFrom = genFn();
-    while(true){
-      const { done, value } = yieldFrom.next();
-      if(done) break;
-      yield value;
-    }
-  }
+    yield* gen;
 }
 
 export const id = <T>(x: T) => x;
 
-export const succ = (x: number) => x + 1;
+export function succ(x: number): number;
+export function succ(x: bigint): bigint;
+export function succ(x: number | bigint) {
+  if(typeof x === 'number') return x + 1;
+  if(typeof x === 'bigint') return x + 1n;
+  throw new Error('Successor is not defined for this type');
+};
 
 export const binSearch = <T>(
   arr: T[],
@@ -629,7 +617,7 @@ export const memoizeMulti = <Ks extends any[], R>(fn: (...args: Ks) => R, defaul
   }
 }
 
-export const enumerate = <T>(arr: T[]): [T, number][] => arr.map((v, i) => [v, i]);
+export const enumerate = <T>(arr: T[]): [value: T, index: number][] => arr.map((v, i) => [v, i]);
 
 export class DefaultMap<K, V> extends Map<K, V>{
   derive: (key: K) => V;
@@ -661,7 +649,7 @@ export class DefaultMap<K, V> extends Map<K, V>{
 
 export const takeFirst = <T>(iter: Iterator<T>) => iter.next().value;
 
-export const subSequences = <T>(arr: T[], minLength = 1, maxLength = Infinity): FutureGen<T[]> => function*(){
+export  function* subSequences<T>(arr: T[], minLength = 1, maxLength = Infinity): Generator<T[]> {
   if(minLength === 0){
     yield [];
     minLength = 1;
@@ -673,7 +661,7 @@ export const subSequences = <T>(arr: T[], minLength = 1, maxLength = Infinity): 
   }
 }
 
-export const subSequencesOfSize = <T>(arr: T[], size: number): FutureGen<T[]> => function*(){
+export function* subSequencesOfSize <T>(arr: T[], size: number): Generator<T[]> {
   for(let offset = 0; offset < arr.length - size; offset++){
     yield arr.slice(offset, offset + size);
   }
@@ -776,7 +764,7 @@ export class Grid<D extends Sizes, T>{
   }
 
   keys(lazy = true): Generator<TupleSizes<D, number>> {
-    return mapGenerator(() => this.entries(lazy), ([coords, _]) => coords)();
+    return mapGenerator(this.entries(lazy), ([coords, _]) => coords);
   }
 
   *values(): Generator<T> {
@@ -820,20 +808,32 @@ export class Grid<D extends Sizes, T>{
 
   equals(other: Grid<Sizes, any>){
     if(this.dimensions !== other.dimensions) return false;
-    for(const [a, b] of zipGenerators(this.values.bind(this), other.values.bind(other))()){
+    for(const [a, b] of zipGenerators(this.values(), other.values())){
       if(a !== b) return false;
     }
     return true;
   }
 }
 
-export const zipWithIndex = <T>(arr: T[]): [value: T, index: number][] => arr.map((v, i) => [v, i]);
-
 export const first = <T>(arg: readonly [T, ...any]): T => arg[0];
 export const second = <T>(arg: readonly [any, T, ...any]): T => arg[1];
 export const third = <T>(arg: readonly [any, any, T, ...any]): T => arg[2];
 
-export const add = (x: number) => (y: number) => x + y;
+export function add(x: number): (y: number) => number;
+export function add(x: bigint): (y: bigint) => bigint;
+export function add(x: string): (y: string | number | bigint) => string;
+export function add(x: Vec2): (y: Vec2) => Vec2;
+export function add(x: Vec3): (y: Vec3) => Vec3;
+export function add<T>(x: Set<T>): (y: Set<T>) => Set<T>;
+export function add<T>(x: number | bigint | string | Vec2 | Vec3 | Set<T>) {
+  if(typeof x === 'number') return (y: number) => x + y;
+  if(typeof x === 'bigint') return (y: bigint) => x + y;
+  if(typeof x === 'string') return (y: string | number | bigint) => x + y;
+  if(x instanceof Vec2) return (y: Vec2) => x.add(y);
+  if(x instanceof Vec3) return (y: Vec3) => x.add(y);
+  if(x instanceof Set) return (y: Set<T>) => union(x, y);
+  throw new Error('add is not defined for this type');
+}
 
 export type Vec2Str = ReturnType<Vec2['toString']>
 export class Vec2 {
@@ -1038,22 +1038,32 @@ export function* permutations<T>(arr: T[]): Generator<T[]> {
   }
 }
 
-export const minBy = <T>(data: T[], fn: (data: T, i: number, o: T[]) => number): T => {
-  if(data.length === 0) throw new Error('This function needs atleast on arg');
-  let best: [number, T] = [fn(data[0], 0, data), data[0]];
-  for(let i = 1; i < data.length; i++){
-    const score = fn(data[i], i, data);
-    if(score < best[0]) best = [score, data[i]];
+export const minBy = <T>(data: Iterable<T>, fn: (data: T, i: number) => number | bigint): T => {
+  const gen = data[Symbol.iterator]();
+  let cur = gen.next();
+  if(cur.done) throw new Error('Cannot get max of empty iterable');
+  let best: [number | bigint, T] = [Infinity, undefined as any];
+  let i = 0;
+  while(!cur.done){
+    const score = fn(cur.value, i);
+    if(score < best[0]) best = [score, cur.value];
+    cur = gen.next();
+    i++;
   }
   return best[1];
 }
 
-export const maxBy = <T>(data: T[], fn: (data: T, i: number, o: T[]) => number): T => {
-  if(data.length === 0) throw new Error('This function needs atleast on arg');
-  let best: [number, T] = [fn(data[0], 0, data), data[0]];
-  for(let i = 1; i < data.length; i++){
-    const score = fn(data[i], i, data);
-    if(score > best[0]) best = [score, data[i]];
+export const maxBy = <T>(data: Iterable<T>, fn: (data: T, i: number) => number | bigint): T => {
+  const gen = data[Symbol.iterator]();
+  let cur = gen.next();
+  if(cur.done) throw new Error('Cannot get max of empty iterable');
+  let best: [number | bigint, T] = [-Infinity, undefined as any];
+  let i = 0;
+  while(!cur.done){
+    const score = fn(cur.value, i);
+    if(score > best[0]) best = [score, cur.value];
+    cur = gen.next();
+    i++;
   }
   return best[1];
 }

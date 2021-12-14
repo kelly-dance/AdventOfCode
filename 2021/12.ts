@@ -22,12 +22,12 @@ for(const pair of inp){
   else cons[f].push(t);
 }
 
-let start = labelToBin.get('start')!;
-let end = labelToBin.get('end')!;
-let cache: (number | undefined)[]; // initialized down in the testing loop
+const start = labelToBin.get('start')!;
+const end = labelToBin.get('end')!;
+const cache: (number | undefined)[] = new Array(1 << (Math.ceil(Math.log2(labelToBin.size)) + labelToBin.size));
 const searchFrom = (current: number, visited: number, part2: boolean): number => {
   if(current === end) return 1;
-  let key = (current << labelToBin.size) | (visited << 1) | Number(part2);
+  const key = (current << labelToBin.size) | (visited << 1) | Number(part2);
   if(cache[key] !== undefined) return cache[key]!;
   let paths = 0;
   for(const neighbor of cons[current]){ // for each connected node
@@ -46,14 +46,7 @@ const searchFrom = (current: number, visited: number, part2: boolean): number =>
   return paths;
 };
 
-let totalTime = 0;
-for(let i = 0; i < 1e4; i++){
-  cache = new Array(1 << (Math.ceil(Math.log2(labelToBin.size)) + labelToBin.size));
-  let startTime = performance.now();
-  searchFrom(start, 1 << start, false); // part 1
-  searchFrom(start, 1 << start, true); // part 2
-  totalTime += performance.now() - startTime;
-}
-console.log(totalTime / 1e4, 'ms');
+console.log(searchFrom(start, 1 << start, false)); // part 1
+console.log(searchFrom(start, 1 << start, true)); // part 2
 
 

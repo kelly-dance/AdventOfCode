@@ -1,4 +1,4 @@
-import { combos, countMatches, Grid, inRangeStd, readFile, sum } from '../tools.ts';
+import { inRangeStd, readFile, sum } from '../tools.ts';
 
 /**
  * @typedef {(0 | 1 | 2)[][]} State

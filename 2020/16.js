@@ -1,4 +1,4 @@
-import { inRange, product, range, readFile, sum, zipWithIndex } from '../tools.ts';
+import { inRange, product, range, readFile, sum, enumerate } from '../tools.ts';
 
 const [fields, mine, nearby] = readFile('inputs/16.txt').split('\n\n');
 
@@ -49,7 +49,7 @@ const findOrder = (fields, prev = []) => {
 const parsedTicket = mine.split('\n')[1].split(',').map(Number)
 
 console.log(product( // PART 2
-  zipWithIndex(findOrder(parsedFields))
+  enumerate(findOrder(parsedFields))
     .filter(([{name}]) => name.includes('departure'))
     .map(([_, i]) => parsedTicket[i])
 ));
