@@ -1310,3 +1310,112 @@ export class SortedSet<T>{
     else node.parent!.right = to;
   }
 }
+
+export class Heap<T>{
+  private items: T[];
+
+  constructor(private comparator: (a: T, b: T) => number){
+    this.items = [];
+  }
+
+  get size(){ return this.items.length }
+
+  private getParentIndex(i: number) { return Math.floor((i - 1) / 2) }
+  private getLeftIndex(i: number) { return i * 2 + 1 }
+  private getRightIndex(i: number) { return i * 2 + 2 }
+
+  private hasParent(i: number) { return this.getParentIndex(i) < this.size && this.getParentIndex(i) >= 0 }
+  private hasLeft(i: number) { return this.getLeftIndex(i) < this.size && this.getLeftIndex(i) >= 0 }
+  private hasRight(i: number) { return this.getRightIndex(i) < this.size && this.getRightIndex(i) >= 0 }
+
+  private parent(i: number) { return this.items[this.getParentIndex(i)] }
+  private left(i: number) { return this.items[this.getLeftIndex(i)] }
+  private right(i: number) { return this.items[this.getRightIndex(i)] }
+
+  private swap(a: number, b: number){
+    [this.items[a], this.items[b]] = [this.items[b], this.items[a]];
+  }
+
+  public top(): T {
+    if(!this.size) throw new Error('Cannot get top element of empty heap');
+    return this.items[0];
+  }
+
+  public pop(): T {
+    if(!this.size) throw new Error('Cannot pop element from empty heap');
+    if(this.size === 1) return this.items.pop()!;
+    const item = this.items[0];
+    this.items[0] = this.items.pop()!;
+    this.heapifyDown();
+    return item;
+  }
+
+  public add(item: T) {
+    this.items.push(item);
+    this.heapifyUp();
+  }
+
+  public heapifyUp(){
+    let i = this.items.length - 1;
+    while(this.hasParent(i) && this.comparator(this.parent(i), this.items[i]) > 0){
+      this.swap(this.getParentIndex(i), i);
+      i = this.getParentIndex(i);
+    }
+  }
+
+  public heapifyDown(){
+    let i = 0;
+    while(this.hasLeft(i)){
+      let smaller = this.getLeftIndex(i);
+      if(this.hasRight(i) && this.comparator(this.right(i), this.left(i)) < 0) smaller = this.getRightIndex(i);
+      if(this.comparator(this.items[i], this.items[smaller]) < 0) break;
+      this.swap(i, smaller);
+      i = smaller;
+    }
+  }
+
+  public empty() {
+    return this.size === 0;
+  }
+}
+
+type LinkedList<T> = { val: T, prev?: LinkedList<T> };
+export type DijkstraCon<T> = { to: T, cost: number, from: LinkedList<T> };
+export const dijkstra = <T>(
+  start: T, goal: T,
+  getCons: (from: T) => Omit<DijkstraCon<T>, 'from'>[],
+  transform: (arg: T) => any = id,
+): { totalCost: number, path: LinkedList<T> } | undefined => {
+  const queue = new Heap<DijkstraCon<T>>((a, b) => a.cost - b.cost);
+  const seen = new Set<any>([transform(start)]);
+
+  const transformedGoal = transform(goal);
+
+  for(const nextCon of getCons(start)) {
+    seen.add(transform(nextCon.to));
+    queue.add({ ...nextCon, from: { val: start } });
+  }
+
+  while(!queue.empty()){
+    const con = queue.pop()!;
+    const transformedTo = transform(con.to);
+   
+    if(transformedTo === transformedGoal){
+      return {
+        path: { val: con.to, prev: con.from },
+        totalCost: con.cost,
+      }
+    }
+
+    for(const nextCon of getCons(con.to)){
+      const transformedNext = transform(nextCon.to);
+      if(seen.has(transformedNext)) continue;
+      seen.add(transformedNext);
+      queue.add({
+        to: nextCon.to,
+        cost: nextCon.cost + con.cost,
+        from: { val: con.to, prev: con.from }
+      });
+    }
+  }
+}
