@@ -476,7 +476,7 @@ export const isSubset = (a: Set<any>, b: Set<any>): boolean => {
   return true;
 }
 
-export const pickIntsFromString = (str: string) => str.match(/-?\d+/g)?.map(s => parseInt(s)) || [];
+export const pickIntsFromString = (str: string) => str.match(/-?\d+/g)?.map(s => parseInt(s)) ?? [];
 
 export class MultiMap<Ks extends any[], T> implements Map<Ks, T>{
   numKeys: number;
@@ -1387,13 +1387,15 @@ export const dijkstra = <T>(
   transform: (arg: T) => any = id,
 ): { totalCost: number, path: LinkedList<T> } | undefined => {
   const queue = new Heap<DijkstraCon<T>>((a, b) => a.cost - b.cost);
+  const minCons = new Map<any, DijkstraCon<T>>();
   const seen = new Set<any>([transform(start)]);
 
   const transformedGoal = transform(goal);
 
   for(const nextCon of getCons(start)) {
-    seen.add(transform(nextCon.to));
-    queue.add({ ...nextCon, from: { val: start } });
+    const finalizedNextCon: DijkstraCon<T> = { ...nextCon, from: { val: start } };
+    minCons.set(transform(nextCon.to), finalizedNextCon);
+    queue.add(finalizedNextCon);
   }
 
   while(!queue.empty()){
@@ -1407,15 +1409,25 @@ export const dijkstra = <T>(
       }
     }
 
+    if(seen.has(transformedTo)) throw new Error(`does this happen? ${transformedTo}`);
+    seen.add(transformedTo);
+    minCons.delete(transformedTo);
+
     for(const nextCon of getCons(con.to)){
       const transformedNext = transform(nextCon.to);
       if(seen.has(transformedNext)) continue;
-      seen.add(transformedNext);
-      queue.add({
-        to: nextCon.to,
-        cost: nextCon.cost + con.cost,
-        from: { val: con.to, prev: con.from }
-      });
+      const minConToNext = minCons.get(transformedNext);
+      const finalizedNextCon: DijkstraCon<T> = { to: nextCon.to, cost: nextCon.cost + con.cost, from: { val: con.to, prev: con.from } };
+      if(!minConToNext) {
+        minCons.set(transformedNext, finalizedNextCon);
+        queue.add(finalizedNextCon);
+      }else{
+        if(minConToNext.cost > finalizedNextCon.cost){
+          minConToNext.cost = finalizedNextCon.cost;
+          minConToNext.from = finalizedNextCon.from;
+        }
+      }
+      
     }
   }
 }

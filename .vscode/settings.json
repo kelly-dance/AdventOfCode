@@ -3,5 +3,6 @@
   "javascript.suggest.autoImports": true,
   "deno.suggest.imports.hosts": {
     "https://deno.land": true
-  }
+  },
+  "python.linting.enabled": true
 }

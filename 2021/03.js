@@ -9,6 +9,7 @@ const toDec = arr => arr.reduce((acc, cur) => acc * 2 + cur, 0);
 const gamma = toDec(transpose(inp).map(bits => sum(bits) >= bits.length / 2));
 const epsilon = ~gamma & (2 ** counts.length - 1);
 
+console.log(gamma, epsilon);
 console.log(gamma * epsilon);
 
 let oxy = toDec(range(inp[0].length).reduce((acc, b) => {

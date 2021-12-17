@@ -2,4 +2,5 @@
 */otherLangs/haskell/*.o
 */otherLangs/haskell/*.hi
 */otherLangs/haskell/bin
+*/otherLangs/python/.mypy_cache
 session
