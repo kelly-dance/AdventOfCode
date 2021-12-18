@@ -315,7 +315,7 @@ export const totientsUpToGenerator = function*(target: number){
   return phi;
 }
 
-export const debugDecorator = (label: string) => <T extends [], R>(fn: ((...args: T) => R)) => (...args: T) => {
+export const debugDecorator = (label: string) => <T extends any[], R>(fn: ((...args: T) => R)) => (...args: T) => {
   console.log(`called`, label, 'args', args)
   const result = fn(...args)
   console.log(`returned from`, label, result, 'args', args)
