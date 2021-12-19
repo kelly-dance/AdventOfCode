@@ -946,7 +946,7 @@ export class Vec3{
   }
 
   manhattenLen(){
-    return Math.abs(this.x), Math.abs(this.y) + Math.abs(this.z)
+    return Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z)
   }
 
   minDist(otr: Vec3){
