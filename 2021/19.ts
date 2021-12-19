@@ -1,4 +1,4 @@
-import { DefaultOMap, pairs, pickIntsFromString, range, readAdvent, repeatedAp, succ } from '../tools.ts';
+import { DefaultOMap, OSet, pairs, pickIntsFromString, range, readAdvent, repeatedAp, succ } from '../tools.ts';
 
 const add = (a: number[], b: number[]) => a.map((v,i) => v + b[i]);
 const sub = (a: number[], b: number[]) => a.map((v,i) => v - b[i]);
@@ -40,9 +40,9 @@ const check = (a: number, b: number, sourcer: number): undefined | [number, numb
   }
 }
 
-const pts = new Set();
-for(let i = 0; i < inp[0].length; i++) pts.add(inp[0][i][0].join(','));
-const offsets = new Array<number[] | undefined>(inp.length); // offsets from scanenr 0 to each
+const pts = new OSet<number[]>(a => a.join(','));
+for(let i = 0; i < inp[0].length; i++) pts.add(inp[0][i][0]);
+const offsets = new Array<number[] | undefined>(inp.length); // offsets from scanner 0 to each
 offsets[0] = [0, 0, 0];
 
 // recursive fn to find pairs of scanners that match and build off them to find all
@@ -54,7 +54,7 @@ const explore = (scanner: number, startRotation: number) => {
     const [r, loc] = res;
     const ownff = add(loc, offsets[scanner]!);
     offsets[i] = ownff
-    for(let j = 0; j < inp[i].length; j++) pts.add(add(inp[i][j][r], ownff).join(','));
+    for(let j = 0; j < inp[i].length; j++) pts.add(add(inp[i][j][r], ownff));
     explore(i, r);
   }
 }

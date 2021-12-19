@@ -1243,6 +1243,62 @@ export class DefaultOMap<K, V> extends OMap<K, V>{
   }
 }
 
+export class OSet<T> implements Set<T> {
+  public internalMap: Map<any, T>;
+  [Symbol.toStringTag]: string;
+
+  constructor(public resolver: (val: T) => string){
+    this.internalMap = new Map();
+  }
+
+  clear(): void {
+    this.internalMap.clear();
+  }
+
+  delete(key: T): boolean {
+    return this.internalMap.delete(this.resolver(key));
+  }
+
+  *entries(): IterableIterator<[T, T]> {
+    for(const [resolved, value] of this.internalMap.entries()){
+      yield [value, value];
+    }
+  }
+
+  forEach(cb: (val: T, key: T, set: Set<any>) => any, thisArg?: any): void {
+    for(const [res, value] of this.internalMap.entries()){
+      cb.call(thisArg, value, value, this as any as Set<T>); // loooool
+    }
+  }
+
+  has(val: T): boolean {
+    return this.internalMap.has(this.resolver(val));
+  }
+
+  add(val: T): this {
+    this.internalMap.set(this.resolver(val), val);
+    return this;
+  }
+
+  *keys(): IterableIterator<T> {
+    for(const [res, val] of this.internalMap.entries()){
+      yield val;
+    }
+  }
+
+  *values(): IterableIterator<T> {
+    yield* this.keys();
+  }
+
+  get size(){
+    return this.internalMap.size;
+  }
+
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.values();
+  }
+}
+
 export function* multiLoop<S extends Sizes, T extends any>(depth: S, arr: MultiDimArray<S, T>): Generator<[T, ...TupleSizes<S, number>]> {
   if(depth === 1){
     for(let i = 0; i < arr.length; i++)
