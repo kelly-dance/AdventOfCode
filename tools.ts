@@ -620,11 +620,8 @@ export const memoizeMulti = <Ks extends any[], R>(fn: (...args: Ks) => R, defaul
 export const enumerate = <T>(arr: T[]): [value: T, index: number][] => arr.map((v, i) => [v, i]);
 
 export class DefaultMap<K, V> extends Map<K, V>{
-  derive: (key: K) => V;
-
-  constructor(deriveDefault: (key: K) => V){
+  constructor(private derive: (key: K) => V){
     super();
-    this.derive = deriveDefault;
   }
 
   get(key: K): V {
@@ -1119,7 +1116,7 @@ export const readAdvent = async (): Promise<string> => {
   const exists = [...Deno.readDirSync(`./inputs`)].some(f => f.name === `${day}.txt`);
   if(exists) {
     const text = readFile(`./inputs/${day}.txt`);
-    if(!text.includes(warningText)) return text;
+    if(!text.includes(warningText) && text.length) return text;
   }
   const req = await fetch(
     `https://adventofcode.com/${year}/day/${parseInt(day)}/input`,
@@ -1213,6 +1210,36 @@ export class OMap<K, V> implements Map<K, V> {
 
   [Symbol.iterator](): IterableIterator<[K, V]> {
     return this.entries();
+  }
+
+  apply(key: K, fn: (val: V | undefined, key: K) => V): this {
+    this.set(key, fn(this.get(key), key));
+    return this;
+  }
+}
+
+export class DefaultOMap<K, V> extends OMap<K, V>{
+  constructor(resolver: (k: K) => string, private derive: (key: K) => V){
+    super(resolver);
+  }
+
+  get(key: K): V {
+    const stored = super.get(key);
+    if(stored === undefined) {
+      const computed = this.derive(key);
+      this.set(key, computed)
+      return computed;
+    }
+    return stored;
+  }
+
+  apply(key: K, fn: (val: V, key: K) => V): this {
+    this.set(key, fn(this.get(key), key));
+    return this;
+  }
+
+  has(key: K){
+    return true;
   }
 }
 
@@ -1430,4 +1457,9 @@ export const dijkstra = <T>(
       
     }
   }
+}
+
+export const repeatedAp = <T>(fn: (arg: T) => T, count: number, arg: T): T => {
+  for(let i = 0; i < count; i++) arg = fn(arg);
+  return arg;
 }

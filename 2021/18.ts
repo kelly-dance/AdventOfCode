@@ -1,12 +1,12 @@
 import { readAdvent } from '../tools.ts';
 
-type parsed = number | parsed[];
+type parsed = number | [parsed, parsed];
 
 const inp: parsed[] = (await readAdvent()).split('\n').map(s => JSON.parse(s));
 
 const copy = (p: parsed): parsed => {
   if(typeof p === 'number') return p;
-  return p.map(p => copy(p));
+  return p.map(p => copy(p)) as parsed;
 }
 
 type action = {
@@ -17,7 +17,7 @@ type action = {
   kill: boolean,
 }
 
-let reduceExplodes = (p: parsed, depth: number): action[] | undefined => {
+const reduceExplodes = (p: parsed, depth: number): action[] | undefined => {
   if(typeof p === 'number') {
     return undefined;
   };
@@ -67,7 +67,7 @@ let reduceExplodes = (p: parsed, depth: number): action[] | undefined => {
   }
 }
 
-let reduceSplits = (p: parsed): [number, number] | undefined | true => {
+const reduceSplits = (p: parsed): [number, number] | undefined | true => {
   if(typeof p === 'number') {
     if(p >= 10) return [Math.floor(p / 2), Math.ceil(p / 2)];
     return undefined;
@@ -91,9 +91,8 @@ const reduce = (p: parsed): boolean => {
   return !!split;
 }
 
-let acc: parsed = copy(inp[0]);
+let acc = copy(inp[0]);
 while(reduce(acc));
-
 for(let i = 1; i < inp.length; i++){
   acc = [acc, copy(inp[i])];
   while(reduce(acc));
@@ -110,7 +109,7 @@ let max = 0;
 for(let i = 0; i < inp.length; i++){
   for(let j = 0; j < inp.length; j++){
     if(i === j) continue;
-    let acc = [copy(inp[i]), copy(inp[j])]
+    const acc: parsed = [copy(inp[i]), copy(inp[j])]
     while(reduce(acc));
     const v = evalp(acc);
     if(v > max) max = v;
